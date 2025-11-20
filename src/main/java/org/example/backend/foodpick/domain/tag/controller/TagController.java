@@ -1,10 +1,10 @@
-package org.example.backend.foodpick.domain.food.controller;
+package org.example.backend.foodpick.domain.tag.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.example.backend.foodpick.domain.food.dto.FoodRequest;
-import org.example.backend.foodpick.domain.food.dto.FoodResponse;
-import org.example.backend.foodpick.domain.food.service.FoodService;
 import org.example.backend.foodpick.domain.restaurant.model.Restaurant;
+import org.example.backend.foodpick.domain.tag.dto.TagRequest;
+import org.example.backend.foodpick.domain.tag.dto.TagResponse;
+import org.example.backend.foodpick.domain.tag.service.TagService;
 import org.example.backend.foodpick.global.util.ApiResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,38 +17,38 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/food")
-public class FoodController {
-    private final FoodService foodService;
+@RequestMapping("/tag")
+public class TagController {
+    private final TagService tagService;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> createFood(@RequestBody FoodRequest request) {
-        return foodService.createFood(request);
+    public ResponseEntity<ApiResponse<Void>> createTag(@RequestBody TagRequest request) {
+        return tagService.createTag(request);
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<FoodResponse>>> getAllFoods() {
-        return foodService.getAllFoods();
+    public ResponseEntity<ApiResponse<List<TagResponse>>> getAllTags() {
+        return tagService.getAllTags();
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> updateFood(
+    public ResponseEntity<ApiResponse<Void>> updateTag(
             @PathVariable Long id,
-            @RequestBody FoodRequest request) {
-        return foodService.updateFood(id, request);
+            @RequestBody TagRequest request) {
+        return tagService.updateTag(id, request);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteFood(@PathVariable Long id) {
-        return foodService.deleteFood(id);
+    public ResponseEntity<ApiResponse<Void>> deleteTag(@PathVariable Long id) {
+        return tagService.deleteTag(id);
     }
 
     /**
-     * ✅ 음식 카테고리명으로 음식점 검색
-     * GET /food/search?name=한식&page=0&size=10
+     * ✅ 태그명으로 음식점 검색
+     * GET /tag/search?name=맛집&page=0&size=10
      */
     @GetMapping("/search")
-    public ResponseEntity<ApiResponse<Page<Restaurant>>> searchByFood(
+    public ResponseEntity<ApiResponse<Page<Restaurant>>> searchByTag(
             @RequestParam String name,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -60,6 +60,6 @@ public class FoodController {
                 : Sort.Direction.DESC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sort));
         
-        return foodService.searchRestaurantsByFood(name, pageable);
+        return tagService.searchRestaurantsByTag(name, pageable);
     }
 }
