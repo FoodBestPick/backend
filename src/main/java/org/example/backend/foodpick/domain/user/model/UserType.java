@@ -4,5 +4,6 @@ public enum UserType {
     GOOGLE,
     KAKAO,
     NAVER,
-    APPLE
+    APPLE,
+    APP
 }
