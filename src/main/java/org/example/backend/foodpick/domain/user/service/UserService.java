@@ -7,7 +7,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserService {
 
+    /*
     public ResponseEntity<ApiResponse<String>> getUserById(String id) {
 
     }
+     */
 }

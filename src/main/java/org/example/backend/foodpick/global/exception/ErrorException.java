@@ -6,7 +6,7 @@ import lombok.Getter;
 public enum ErrorException {
     ACCESS_TOKEN_NOT_EXPIRED(400, "액세스 토큰이 아직 만료되지 않았습니다."),
     INVALID_PASSWORD(400, "비밀번호가 올바르지 않습니다."),
-    EMAIL_SEND_FAILED(400, "유효한 이메일을 입력해주세요."),
+    INVALID_EMAIL_FORMAT(400, "이메일 형식이 올바르지 않습니다."),
     INVALID_CODE(400, "이메일 인증코드를 다시 확인해주세요."),
     EMAIL_NOT_VERIFIED(400, "이메일 인증코드를 입력해주세요."),
     FAIL_JSONPROCESSING(400, "Json 형식을 변환하지 못했습니다."),
