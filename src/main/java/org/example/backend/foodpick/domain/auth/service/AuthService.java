@@ -1,10 +1,8 @@
 package org.example.backend.foodpick.domain.auth.service;
 
 import lombok.RequiredArgsConstructor;
-import org.example.backend.foodpick.domain.auth.dto.AuthInRequest;
-import org.example.backend.foodpick.domain.auth.dto.AuthInResponse;
-import org.example.backend.foodpick.domain.auth.dto.AuthUpRequest;
-import org.example.backend.foodpick.domain.auth.dto.TokenResponse;
+import org.apache.catalina.User;
+import org.example.backend.foodpick.domain.auth.dto.*;
 import org.example.backend.foodpick.domain.user.dto.LoginUserResponse;
 import org.example.backend.foodpick.domain.user.model.UserEntity;
 import org.example.backend.foodpick.domain.auth.repository.AuthRepository;
@@ -21,6 +19,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AuthService {
 
+    private final EmailService emailService;
     private final AuthRepository authRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
@@ -32,6 +31,10 @@ public class AuthService {
 
         if (request.getEmail() == null || !request.getEmail().matches(EMAIL_REGEX)) {
             throw new CustomException(ErrorException.INVALID_EMAIL_FORMAT);
+        }
+
+        if (!emailService.isVerified(request.getEmail())) {
+            throw new CustomException(ErrorException.EMAIL_VERTIFICATION);
         }
 
         if (authRepository.existsByEmail(request.getEmail())) {
@@ -56,6 +59,8 @@ public class AuthService {
 
         authRepository.save(user);
 
+        emailService.clearVerified(request.getEmail());
+
         return ResponseEntity.ok(new ApiResponse<>(200, "회원가입이 완료되었습니다.", null));
     }
 
@@ -71,7 +76,6 @@ public class AuthService {
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new CustomException(ErrorException.INVALID_PASSWORD);
         }
-
 
         String accessToken = jwtTokenProvider.generateToken(user.getId());
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
@@ -92,4 +96,67 @@ public class AuthService {
         );
     }
 
+    public ResponseEntity<ApiResponse<String>> emailSend(EmailSendRequest request) {
+
+        if (request.getEmail() == null || !request.getEmail().matches(EMAIL_REGEX)) {
+            throw new CustomException(ErrorException.INVALID_EMAIL_FORMAT);
+        }
+
+        String authCode = emailService.generateAuthCode();
+
+        emailService.saveAuthCode(request.getEmail(), authCode);
+        emailService.sendAuthCode(request.getEmail(), authCode);
+
+        return ResponseEntity.ok(new ApiResponse<>(200, "이메일 인증번호가 전송되었습니다.", null));
+    }
+
+    public ResponseEntity<ApiResponse<String>> emailVerify(EmailVerifyRequest request) {
+        if (request.getEmail() == null || !request.getEmail().matches(EMAIL_REGEX)) {
+            throw new CustomException(ErrorException.INVALID_EMAIL_FORMAT);
+        }
+
+        if (request.getCode() == null || request.getCode().isBlank()) {
+            throw new CustomException(ErrorException.EMAIL_NOT_VERIFIED);
+        }
+
+        emailService.verifyCode(request.getEmail(), request.getCode());
+        emailService.markVerified(request.getEmail());
+
+        return ResponseEntity.ok(new ApiResponse<>(200, "이메일 인증번호가 확인되었습니다.", null));
+    }
+
+    public ResponseEntity<ApiResponse<String>> resetPassword(ResetPasswordRequest request) {
+
+        if (request.getEmail() == null || !request.getEmail().matches(EMAIL_REGEX)) {
+            throw new CustomException(ErrorException.INVALID_EMAIL_FORMAT);
+        }
+
+        if (request.getPassword() == null || request.getPasswordConfirm() == null) {
+            throw new CustomException(ErrorException.PASSWORD_NOT_VERIFIED);
+        }
+
+        if (!request.getPassword().equals(request.getPasswordConfirm())) {
+            throw new CustomException(ErrorException.PASSWORD_NOT_CONFIRM);
+        }
+
+        if (!emailService.isVerified(request.getEmail())) {
+            throw new CustomException(ErrorException.EMAIL_VERTIFICATION);
+        }
+
+        UserEntity user = authRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new CustomException(ErrorException.USER_NOT_FOUND));
+
+        if (passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new CustomException(ErrorException.SAME_PASSWORD_NOT_ALLOWED);
+        }
+
+        String encoded = passwordEncoder.encode(request.getPassword());
+        user.updatePassword(encoded);
+
+        authRepository.save(user);
+
+        emailService.clearVerified(request.getEmail());
+
+        return ResponseEntity.ok(new ApiResponse<>(200, "비밀번호가 변경되었습니다.", null));
+    }
 }

@@ -60,6 +60,10 @@ public class UserEntity {
         this.refreshToken = refreshToken;
     }
 
+    public void updatePassword(String newPassword) {
+        this.password = newPassword;
+    }
+
     public static UserEntity ofSignUp(String email, String password, String nickname) {
         return UserEntity.builder()
                 .email(email)

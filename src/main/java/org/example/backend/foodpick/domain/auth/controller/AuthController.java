@@ -1,9 +1,7 @@
 package org.example.backend.foodpick.domain.auth.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.example.backend.foodpick.domain.auth.dto.AuthInRequest;
-import org.example.backend.foodpick.domain.auth.dto.AuthUpRequest;
-import org.example.backend.foodpick.domain.auth.dto.TokenResponse;
+import org.example.backend.foodpick.domain.auth.dto.*;
 import org.example.backend.foodpick.domain.auth.service.AuthService;
 import org.example.backend.foodpick.global.util.ApiResponse;
 import org.springframework.http.ResponseEntity;
@@ -24,8 +22,23 @@ public class AuthController {
         return authService.signUp(request);
     }
 
-    @PostMapping("signin")
+    @PostMapping("/signin")
     public ResponseEntity<ApiResponse<TokenResponse>> signIn(@RequestBody AuthInRequest request){
         return authService.signIn(request);
+    }
+
+    @PostMapping("/email-send")
+    public ResponseEntity<ApiResponse<String>> emailSend(@RequestBody EmailSendRequest request){
+        return authService.emailSend(request);
+    }
+
+    @PostMapping("/email-verify")
+    public ResponseEntity<ApiResponse<String>> emailVerify(@RequestBody EmailVerifyRequest request){
+        return authService.emailVerify(request);
+    }
+
+    @PostMapping("/password/reset")
+    public ResponseEntity<ApiResponse<String>> resetPassword(@RequestBody ResetPasswordRequest request){
+        return authService.resetPassword(request);
     }
 }
