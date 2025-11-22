@@ -23,7 +23,7 @@ public class UserEntity {
     @Column(nullable = false, length = 30, unique = true)
     private String email;
 
-    @Column(nullable = false, length = 255)
+    @Column(length = 255)
     private String password;
 
     @Column(nullable = false, length = 10)
@@ -40,14 +40,14 @@ public class UserEntity {
     @Column(nullable = false, length = 20)
     private UserStatus status;
 
-    @Column(nullable = false, length = 255)
-    private String statueMessage;
+    @Column(length = 255)
+    private String statusMessage;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
     private UserType userLoginType;
 
-    @Column(nullable = true, length = 255)
+    @Column(length = 255)
     private String refreshToken;
 
     @Column(nullable = false, updatable = false)
@@ -55,6 +55,17 @@ public class UserEntity {
 
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = LocalDateTime.now().withNano(0);
+        this.updatedAt = LocalDateTime.now().withNano(0);
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = LocalDateTime.now().withNano(0);
+    }
 
     public void updateRefreshToken(String refreshToken) {
         this.refreshToken = refreshToken;
@@ -72,10 +83,21 @@ public class UserEntity {
                 .imageUrl(null)
                 .role(UserRole.USER)
                 .status(UserStatus.ACTIVED)
-                .statueMessage("")
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .userLoginType(UserType.APP)
+                .build();
+    }
+
+    public static UserEntity signInOauth(String email, String nickname, UserType userLoginType) {
+        return UserEntity.builder()
+                .email(email)
+                .nickname(nickname)
+                .imageUrl(null)
+                .role(UserRole.USER)
+                .status(UserStatus.ACTIVED)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
                 .build();
     }
 }

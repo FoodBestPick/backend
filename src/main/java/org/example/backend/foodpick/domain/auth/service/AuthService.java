@@ -1,7 +1,6 @@
 package org.example.backend.foodpick.domain.auth.service;
 
 import lombok.RequiredArgsConstructor;
-import org.apache.catalina.User;
 import org.example.backend.foodpick.domain.auth.dto.*;
 import org.example.backend.foodpick.domain.user.dto.LoginUserResponse;
 import org.example.backend.foodpick.domain.user.model.UserEntity;
@@ -14,6 +13,8 @@ import org.example.backend.foodpick.global.util.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -159,4 +160,5 @@ public class AuthService {
 
         return ResponseEntity.ok(new ApiResponse<>(200, "비밀번호가 변경되었습니다.", null));
     }
+
 }
