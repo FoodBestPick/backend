@@ -1,7 +1,6 @@
 package org.example.backend.foodpick.domain.food.service;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.example.backend.foodpick.domain.food.dto.FoodRequest;
 import org.example.backend.foodpick.domain.food.dto.FoodResponse;
 import org.example.backend.foodpick.domain.food.model.Food;
@@ -24,7 +23,6 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-@Slf4j
 public class FoodService {
 
     private final FoodRepository foodRepository;
@@ -57,13 +55,33 @@ public class FoodService {
      */
     public ResponseEntity<ApiResponse<List<FoodResponse>>> getAllFoods() {
         List<Food> foods = foodRepository.findAll();
+        
         List<FoodResponse> responses = foods.stream()
                 .map(f -> FoodResponse.builder()
                         .id(f.getId())
                         .name(f.getName())
                         .build())
                 .collect(Collectors.toList());
+        
         return ResponseEntity.ok(new ApiResponse<>(200, "음식 목록", responses));
+    }
+
+    /**
+     * 음식 카테고리 상세 조회
+     */
+    public ResponseEntity<ApiResponse<FoodResponse>> getFoodById(Long id) {
+        Optional<Food> foodOpt = foodRepository.findById(id);
+        if (foodOpt.isEmpty()) {
+            return ResponseEntity.ok(ApiResponse.failure("음식을 찾을 수 없습니다.", 404));
+        }
+
+        Food food = foodOpt.get();
+        FoodResponse response = FoodResponse.builder()
+                .id(food.getId())
+                .name(food.getName())
+                .build();
+        
+        return ResponseEntity.ok(new ApiResponse<>(200, "음식 조회", response));
     }
 
     /**

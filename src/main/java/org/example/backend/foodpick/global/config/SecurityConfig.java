@@ -1,4 +1,4 @@
-  package org.example.backend.foodpick.infra.s3.configuration;
+  package org.example.backend.foodpick.global.config;
 
   import org.springframework.context.annotation.Bean;
   import org.springframework.context.annotation.Configuration;
