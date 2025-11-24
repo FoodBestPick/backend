@@ -27,4 +27,9 @@ public class OauthController {
     public ResponseEntity<ApiResponse<TokenResponse>> signInGoogle (@RequestBody SignInKakaoRequest request){
         return oauthService.signInGoogle(request);
     }
+
+    @PostMapping("/signin/naver")
+    public ResponseEntity<ApiResponse<TokenResponse>> signInNaver (@RequestBody SignInKakaoRequest request){
+        return oauthService.signInNaver(request);
+    }
 }
