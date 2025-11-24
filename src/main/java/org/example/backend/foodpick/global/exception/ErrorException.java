@@ -6,7 +6,10 @@ import lombok.Getter;
 public enum ErrorException {
     ACCESS_TOKEN_NOT_EXPIRED(400, "액세스 토큰이 아직 만료되지 않았습니다."),
     INVALID_PASSWORD(400, "비밀번호가 올바르지 않습니다."),
-    EMAIL_SEND_FAILED(400, "유효한 이메일을 입력해주세요."),
+    PASSWORD_NOT_VERIFIED(400, "비밀번호를 입력해주세요."),
+    PASSWORD_NOT_CONFIRM(400, "비밀번호, 비밀번호 확인란이 일치하지 않습니다."),
+    SAME_PASSWORD_NOT_ALLOWED(400, "기존 비밀번호와 동일한 비밀번호로는 변경할 수 없습니다."),
+    INVALID_EMAIL_FORMAT(400, "이메일을 입력하지 않았거나, 이메일 형식이 올바르지 않습니다."),
     INVALID_CODE(400, "이메일 인증코드를 다시 확인해주세요."),
     EMAIL_NOT_VERIFIED(400, "이메일 인증코드를 입력해주세요."),
     FAIL_JSONPROCESSING(400, "Json 형식을 변환하지 못했습니다."),
@@ -59,16 +62,18 @@ public enum ErrorException {
     ANSWER_NOT_FOUND(404, "해당 문의에 대한 답변이 존재하지 않습니다."),
     REPORT_NOT_FOUND(404, "신고를 찾을 수 없습니다."),
     BANNER_NOT_FOUND(404, "배너를 찾을 수 없습니다."),
+    EMAIL_CODE_NOT_FOUND(404,  "인증번호가 존재하지 않거나 발급되지 않았습니다."),
 
     DUPLICATE_EMAIL(409, "중복된 이메일 입니다."),
     DUPLICATE_NICKNAME(409, "중복된 닉네임 입니다."),
     ALREADY_APPLIED(409, "해당 프로젝트에 이미 지원하셨습니다."),
     EVALUATION_ALREADY_EXISTS(409, "이미 평가를 완료한 사용자입니다."),
 
-    EMAIL_CODE_EXPIRED(410, "이메일 코드가 만료되었습니다."),
+    EMAIL_CODE_EXPIRED(410, "인증번호가 만료되었습니다."),
 
     SERVER_ERROR(500, "서버 오류가 발생했습니다."),
-    FAIL_UPLOAD(500, "파일 업로드에 실패했습니다.");
+    FILE_UPLOAD_FAILED(500, "파일 업로드에 실패했습니다."),
+    FILE_DELETE_FAILED(500, "기존 프로필 이미지 삭제에 실패했습니다.");
 
     private final int code;
     private final String message;
