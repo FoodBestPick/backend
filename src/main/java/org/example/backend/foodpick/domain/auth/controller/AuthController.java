@@ -41,4 +41,5 @@ public class AuthController {
     public ResponseEntity<ApiResponse<String>> resetPassword(@RequestBody ResetPasswordRequest request){
         return authService.resetPassword(request);
     }
+
 }

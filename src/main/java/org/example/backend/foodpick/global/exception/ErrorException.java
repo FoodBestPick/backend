@@ -9,7 +9,7 @@ public enum ErrorException {
     PASSWORD_NOT_VERIFIED(400, "비밀번호를 입력해주세요."),
     PASSWORD_NOT_CONFIRM(400, "비밀번호, 비밀번호 확인란이 일치하지 않습니다."),
     SAME_PASSWORD_NOT_ALLOWED(400, "기존 비밀번호와 동일한 비밀번호로는 변경할 수 없습니다."),
-    INVALID_EMAIL_FORMAT(400, "이메일 형식이 올바르지 않습니다."),
+    INVALID_EMAIL_FORMAT(400, "이메일을 입력하지 않았거나, 이메일 형식이 올바르지 않습니다."),
     INVALID_CODE(400, "이메일 인증코드를 다시 확인해주세요."),
     EMAIL_NOT_VERIFIED(400, "이메일 인증코드를 입력해주세요."),
     FAIL_JSONPROCESSING(400, "Json 형식을 변환하지 못했습니다."),
