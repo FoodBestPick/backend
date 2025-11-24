@@ -1,5 +1,7 @@
 package org.example.backend.foodpick.infra.s3.service;
 
+import org.example.backend.foodpick.global.exception.CustomException;
+import org.example.backend.foodpick.global.exception.ErrorException;
 import org.example.backend.foodpick.global.util.ApiResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -79,6 +81,15 @@ public class S3Service {
             return getFileUrl(s3Key);
         } finally {
             Files.deleteIfExists(tempFile);
+        }
+    }
+
+    public String uploadToS3Single(MultipartFile file) {
+        try {
+            String s3Key = generateS3Key(file);
+            return uploadFile(file, s3Key);
+        } catch (Exception e) {
+            throw new CustomException(ErrorException.SERVER_ERROR);
         }
     }
 

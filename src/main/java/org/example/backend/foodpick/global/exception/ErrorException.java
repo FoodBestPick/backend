@@ -72,7 +72,8 @@ public enum ErrorException {
     EMAIL_CODE_EXPIRED(410, "인증번호가 만료되었습니다."),
 
     SERVER_ERROR(500, "서버 오류가 발생했습니다."),
-    FAIL_UPLOAD(500, "파일 업로드에 실패했습니다.");
+    FILE_UPLOAD_FAILED(500, "파일 업로드에 실패했습니다."),
+    FILE_DELETE_FAILED(500, "기존 프로필 이미지 삭제에 실패했습니다.");
 
     private final int code;
     private final String message;

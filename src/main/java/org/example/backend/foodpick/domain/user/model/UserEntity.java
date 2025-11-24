@@ -40,8 +40,11 @@ public class UserEntity {
     @Column(nullable = false, length = 20)
     private UserStatus status;
 
-    @Column(nullable = false, length = 255)
-    private String statueMessage;
+    @Column(length = 255)
+    private String statusMessage;
+
+    @Column(length = 255)
+    private String stateMessage;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
@@ -64,6 +67,15 @@ public class UserEntity {
         this.password = newPassword;
     }
 
+    public void updateProfile(String nickname, String stateMessage){
+        this.nickname = nickname;
+        this.stateMessage = stateMessage;
+    }
+
+    public void updateImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
     public static UserEntity ofSignUp(String email, String password, String nickname) {
         return UserEntity.builder()
                 .email(email)
@@ -72,7 +84,6 @@ public class UserEntity {
                 .imageUrl(null)
                 .role(UserRole.USER)
                 .status(UserStatus.ACTIVED)
-                .statueMessage("")
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .userLoginType(UserType.APP)
