@@ -1,6 +1,7 @@
 package org.example.backend.foodpick.domain.user.service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.backend.foodpick.domain.user.dto.DeleteUserRequest;
 import org.example.backend.foodpick.domain.user.dto.UserProfileResponse;
 import org.example.backend.foodpick.domain.user.model.UserEntity;
 import org.example.backend.foodpick.domain.user.repository.UserRepository;
@@ -10,6 +11,7 @@ import org.example.backend.foodpick.global.jwt.JwtTokenValidator;
 import org.example.backend.foodpick.global.util.ApiResponse;
 import org.example.backend.foodpick.infra.s3.service.S3Service;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -20,6 +22,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final JwtTokenValidator jwtTokenValidator;
     private final S3Service s3Service;
+    private final PasswordEncoder passwordEncoder;
 
     public ResponseEntity<ApiResponse<UserProfileResponse>> getUser(String token){
         Long myId = jwtTokenValidator.getUserId(token);
@@ -86,5 +89,27 @@ public class UserService {
         userRepository.save(user);
 
         return ResponseEntity.ok(new ApiResponse<>(200, "프로필이 수정되었습니다.", null));
+    }
+
+    public ResponseEntity<ApiResponse<String>> deleteUser(String token, DeleteUserRequest request) {
+        Long myId = jwtTokenValidator.getUserId(token);
+
+        UserEntity user = userRepository.findById(myId)
+                .orElseThrow(() -> new CustomException(ErrorException.USER_NOT_FOUND));
+
+        if (!myId.equals(user.getId())){
+            throw new CustomException(ErrorException.NOT_USER_DELETE);
+        }
+
+        if (!request.getPassword().equals(request.getPasswordConfirm())) {
+            throw new CustomException(ErrorException.PASSWORD_NOT_CONFIRM);
+        }
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())){
+            throw new CustomException(ErrorException.INVALID_PASSWORD);
+        }
+
+        userRepository.delete(user);
+        return ResponseEntity.ok(new ApiResponse<>(200, "계정탈퇴가 완료되었습니다.", null));
     }
 }

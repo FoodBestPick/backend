@@ -149,14 +149,21 @@ public class JwtTokenValidator {
     }
 
     /**
-     * 특정 JWT 토큰을 무효화하는 메서드 -
+     * Refresh Token에서 userId 추출 (Access Token과 동일한 subject 사용)
      */
-    public void invalidateToken(String token) {
+    public Long getUserIdFromRefreshToken(String refreshToken) {
         try {
-            Claims claims = extractClaims(token);
-            claims.setExpiration(new Date(System.currentTimeMillis() - 1000)); // 1초 전으로 만료 처리
-        } catch (Exception e) {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(getSigningKey())
+                    .build()
+                    .parseClaimsJws(refreshToken)
+                    .getBody();
+
+            return Long.parseLong(claims.getSubject());
+        } catch (ExpiredJwtException e) {
             throw new CustomException(ErrorException.TOKEN_EXPIRED);
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new CustomException(ErrorException.UNAUTHORIZED);
         }
     }
 }

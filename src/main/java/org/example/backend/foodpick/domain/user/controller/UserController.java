@@ -1,6 +1,7 @@
 package org.example.backend.foodpick.domain.user.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.example.backend.foodpick.domain.user.dto.DeleteUserRequest;
 import org.example.backend.foodpick.domain.user.dto.UserProfileResponse;
 import org.example.backend.foodpick.domain.user.service.UserService;
 import org.example.backend.foodpick.global.util.ApiResponse;
@@ -17,8 +18,8 @@ public class UserController {
 
     @GetMapping("/{user_id}/profile")
     public ResponseEntity<ApiResponse<UserProfileResponse>> getUserById(@RequestHeader("Authorization") String token,
-                                                                        @PathVariable("user_id")  Long userId){
-        return userService.getUserById(token,userId);
+                                                                        @PathVariable("user_id") Long userId) {
+        return userService.getUserById(token, userId);
     }
 
     @GetMapping("/profile")
@@ -34,5 +35,11 @@ public class UserController {
             @RequestPart("stateMessage") String stateMessage) {
 
         return userService.editUserProfile(token, file, nickname, stateMessage);
+    }
+
+    @DeleteMapping("/profile/delete")
+    public ResponseEntity<ApiResponse<String>> deleteUser(@RequestHeader("Authorization") String token,
+                                                          @RequestBody DeleteUserRequest request){
+        return userService.deleteUser(token,request);
     }
 }
