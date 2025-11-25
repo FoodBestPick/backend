@@ -1,5 +1,7 @@
 package org.example.backend.foodpick.domain.auth.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.example.backend.foodpick.domain.auth.dto.*;
 import org.example.backend.foodpick.domain.auth.service.AuthService;
@@ -23,8 +25,9 @@ public class AuthController {
     }
 
     @PostMapping("/signin")
-    public ResponseEntity<ApiResponse<TokenResponse>> signIn(@RequestBody AuthInRequest request){
-        return authService.signIn(request);
+    public ResponseEntity<ApiResponse<TokenResponse>> signIn(@RequestBody AuthInRequest request,
+                                                             HttpServletResponse response){
+        return authService.signIn(request, response);
     }
 
     @PostMapping("/email-send")
@@ -40,6 +43,11 @@ public class AuthController {
     @PostMapping("/password/reset")
     public ResponseEntity<ApiResponse<String>> resetPassword(@RequestBody ResetPasswordRequest request){
         return authService.resetPassword(request);
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<TokenResponse>> refreshToken(HttpServletRequest request){
+        return authService.refreshToken(request);
     }
 
 }

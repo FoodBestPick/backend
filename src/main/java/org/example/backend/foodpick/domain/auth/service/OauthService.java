@@ -1,9 +1,10 @@
 package org.example.backend.foodpick.domain.auth.service;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.example.backend.foodpick.domain.auth.dto.AuthInResponse;
-import org.example.backend.foodpick.domain.auth.dto.SignInKakaoRequest;
-import org.example.backend.foodpick.domain.auth.dto.SignInKakaoResponse;
+import org.example.backend.foodpick.domain.auth.dto.TokenRequest;
+import org.example.backend.foodpick.domain.auth.dto.SignInOauthResponse;
 import org.example.backend.foodpick.domain.auth.dto.TokenResponse;
 import org.example.backend.foodpick.domain.auth.repository.AuthRepository;
 import org.example.backend.foodpick.domain.user.dto.LoginUserResponse;
@@ -13,11 +14,9 @@ import org.example.backend.foodpick.domain.user.model.UserType;
 import org.example.backend.foodpick.global.exception.CustomException;
 import org.example.backend.foodpick.global.exception.ErrorException;
 import org.example.backend.foodpick.global.jwt.JwtTokenProvider;
+import org.example.backend.foodpick.global.jwt.JwtTokenValidator;
 import org.example.backend.foodpick.global.util.ApiResponse;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -29,12 +28,14 @@ public class OauthService {
 
     private final AuthRepository authRepository;
     private final JwtTokenProvider jwtTokenProvider;
+    private final JwtTokenValidator jwtTokenValidator;
 
-    public ResponseEntity<ApiResponse<TokenResponse>> signInKakao(SignInKakaoRequest request) {
+    public ResponseEntity<ApiResponse<TokenResponse>> signInKakao(TokenRequest request,
+                                                                  HttpServletResponse response) {
 
         String kakaoAccessToken = request.getToken();
 
-        SignInKakaoResponse kakaoUser = getKakaoUserInfo(kakaoAccessToken);
+        SignInOauthResponse kakaoUser = getKakaoUserInfo(kakaoAccessToken);
 
         if (kakaoUser.getEmail() == null) {
             throw new CustomException(ErrorException.INVALID_EMAIL_FORMAT);
@@ -52,10 +53,23 @@ public class OauthService {
         authRepository.save(user);
 
         String accessToken = jwtTokenProvider.generateToken(user.getId());
-        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
+        String refreshToken = user.getRefreshToken();
 
-        user.updateRefreshToken(refreshToken);
-        authRepository.save(user);
+        if (refreshToken == null || !jwtTokenValidator.validateRefreshToken(refreshToken)) {
+            refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
+            user.updateRefreshToken(refreshToken);
+            authRepository.save(user);
+        }
+
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(60 * 60 * 24 * 14) // 14일
+                .sameSite("Strict")
+                .build();
+
+        response.addHeader("Set-Cookie", cookie.toString());
 
         TokenResponse data = new TokenResponse(accessToken);
 
@@ -70,11 +84,12 @@ public class OauthService {
         );
     }
 
-    public ResponseEntity<ApiResponse<TokenResponse>> signInGoogle(SignInKakaoRequest request) {
+    public ResponseEntity<ApiResponse<TokenResponse>> signInGoogle(TokenRequest request,
+                                                                   HttpServletResponse response) {
 
         String googleIdToken = request.getToken();
 
-        SignInKakaoResponse googleUser = getGoogleUserInfo(googleIdToken);
+        SignInOauthResponse googleUser = getGoogleUserInfo(googleIdToken);
 
         if (googleUser.getEmail() == null) {
             throw new CustomException(ErrorException.INVALID_EMAIL_FORMAT);
@@ -92,10 +107,23 @@ public class OauthService {
         authRepository.save(user);
 
         String accessToken = jwtTokenProvider.generateToken(user.getId());
-        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
+        String refreshToken = user.getRefreshToken();
 
-        user.updateRefreshToken(refreshToken);
-        authRepository.save(user);
+        if (refreshToken == null || !jwtTokenValidator.validateRefreshToken(refreshToken)) {
+            refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
+            user.updateRefreshToken(refreshToken);
+            authRepository.save(user);
+        }
+
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(60 * 60 * 24 * 14) // 14일
+                .sameSite("Strict")
+                .build();
+
+        response.addHeader("Set-Cookie", cookie.toString());
 
         TokenResponse data = new TokenResponse(accessToken);
 
@@ -110,11 +138,12 @@ public class OauthService {
         );
     }
 
-    public ResponseEntity<ApiResponse<TokenResponse>> signInNaver(SignInKakaoRequest request) {
+    public ResponseEntity<ApiResponse<TokenResponse>> signInNaver(TokenRequest request,
+                                                                  HttpServletResponse response) {
 
         String naverAccessToken = request.getToken();
 
-        SignInKakaoResponse naverUser = getNaverUserInfo(naverAccessToken);
+        SignInOauthResponse naverUser = getNaverUserInfo(naverAccessToken);
 
         if (naverUser.getEmail() == null) {
             throw new CustomException(ErrorException.INVALID_EMAIL_FORMAT);
@@ -132,10 +161,23 @@ public class OauthService {
         authRepository.save(user);
 
         String accessToken = jwtTokenProvider.generateToken(user.getId());
-        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
+        String refreshToken = user.getRefreshToken();
 
-        user.updateRefreshToken(refreshToken);
-        authRepository.save(user);
+        if (refreshToken == null || !jwtTokenValidator.validateRefreshToken(refreshToken)) {
+            refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
+            user.updateRefreshToken(refreshToken);
+            authRepository.save(user);
+        }
+
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(60 * 60 * 24 * 14) // 14일
+                .sameSite("Strict")
+                .build();
+
+        response.addHeader("Set-Cookie", cookie.toString());
 
         TokenResponse data = new TokenResponse(accessToken);
 
@@ -149,7 +191,7 @@ public class OauthService {
         return ResponseEntity.ok(new AuthInResponse<>(200, "네이버 로그인 되었습니다.", data, userInfo));
     }
 
-    private SignInKakaoResponse getKakaoUserInfo(String accessToken) {
+    private SignInOauthResponse getKakaoUserInfo(String accessToken) {
 
         String url = "https://kapi.kakao.com/v2/user/me";
 
@@ -177,10 +219,10 @@ public class OauthService {
         Map profile = (Map) kakaoAccount.get("profile");
         String nickname = profile != null ? (String) profile.get("nickname") : null;
 
-        return new SignInKakaoResponse(email, nickname);
+        return new SignInOauthResponse(email, nickname);
     }
 
-    private SignInKakaoResponse getGoogleUserInfo(String idToken) {
+    private SignInOauthResponse getGoogleUserInfo(String idToken) {
 
         String url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + idToken;
 
@@ -202,10 +244,10 @@ public class OauthService {
         String email = (String) body.get("email");
         String nickname = (String) body.get("name");
 
-        return new SignInKakaoResponse(email, nickname);
+        return new SignInOauthResponse(email, nickname);
     }
 
-    private SignInKakaoResponse getNaverUserInfo(String accessToken) {
+    private SignInOauthResponse getNaverUserInfo(String accessToken) {
 
         String url = "https://openapi.naver.com/v1/nid/me";
 
@@ -235,6 +277,6 @@ public class OauthService {
         String email = (String) responseMap.get("email");
         String nickname = (String) responseMap.get("nickname");
 
-        return new SignInKakaoResponse(email, nickname);
+        return new SignInOauthResponse(email, nickname);
     }
 }

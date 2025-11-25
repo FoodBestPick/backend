@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class SignInKakaoResponse {
+public class SignInOauthResponse {
     private String email;
     private String nickname;
 }

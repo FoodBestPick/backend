@@ -46,6 +46,9 @@ public class UserEntity {
     @Column(length = 255)
     private String stateMessage;
 
+    @Column(nullable = false)
+    private int warnings = 0;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
     private UserType userLoginType;
@@ -59,6 +62,8 @@ public class UserEntity {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    private LocalDateTime banEndAt;
+
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now().withNano(0);
@@ -68,6 +73,16 @@ public class UserEntity {
     @PreUpdate
     public void preUpdate() {
         this.updatedAt = LocalDateTime.now().withNano(0);
+    }
+
+    public void updateWarning(int warnings, String message) {
+        this.warnings = warnings;
+        this.statusMessage = message;
+    }
+
+    public void updateStatus(UserStatus status, LocalDateTime BanEndAt) {
+        this.status = status;
+        this.banEndAt = BanEndAt;
     }
 
     public void updateRefreshToken(String refreshToken) {
@@ -95,6 +110,7 @@ public class UserEntity {
                 .imageUrl(null)
                 .role(UserRole.USER)
                 .status(UserStatus.ACTIVED)
+                .warnings(0)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .userLoginType(UserType.APP)
@@ -108,6 +124,7 @@ public class UserEntity {
                 .imageUrl(null)
                 .role(UserRole.USER)
                 .status(UserStatus.ACTIVED)
+                .warnings(0)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .userLoginType(userLoginType)
