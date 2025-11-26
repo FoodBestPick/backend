@@ -27,6 +27,8 @@ public enum ErrorException {
     INVALID_REPORT_TYPE(400, "해당 신고는 유저를 대상으로 하지 않습니다."),
     CANNOT_APPLY_TO_OWN_PROJECT(400, "자신이 생성한 프로젝트에는 지원할 수 없습니다."),
     INVALID_WARNING_RANGE(400, "경고 횟수 범위를 벗어났습니다."),
+    INVALID_BAN_DURATION(400, "정지 기간 범위를 벗어났습니다."),
+    INVALID_ROLE(400, "존재하지 않는 권한입니다."),
 
     UNAUTHORIZED(401, "인증 권한이 없습니다."),
     TOKEN_EXPIRED(401, "토큰이 만료되었습니다."),

@@ -1,7 +1,9 @@
 package org.example.backend.foodpick.domain.user.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.example.backend.foodpick.domain.user.dto.SuspendeRequest;
 import org.example.backend.foodpick.domain.user.dto.UserResponse;
+import org.example.backend.foodpick.domain.user.dto.UserRoleRequest;
 import org.example.backend.foodpick.domain.user.dto.WarningUpdateReqeust;
 import org.example.backend.foodpick.domain.user.service.UserAdminService;
 import org.example.backend.foodpick.global.util.ApiResponse;
@@ -26,5 +28,19 @@ public class UserAdminController {
                                                            @PathVariable("user_id") Long userId,
                                                            @RequestBody WarningUpdateReqeust request){
         return userAdminService.warningUpdate(token, userId, request);
+    }
+
+    @PatchMapping("/{user_id}/suspende")
+    public ResponseEntity<ApiResponse<String>> userSuspende(@RequestHeader("Authorization") String token,
+                                                            @PathVariable("user_id") Long userId,
+                                                            @RequestBody SuspendeRequest request){
+        return userAdminService.userSuspende(token, userId, request);
+    }
+
+    @PatchMapping("/{user_id}/role")
+    public ResponseEntity<ApiResponse<String>> userRoleUpdate(@RequestHeader("Authorization") String token,
+                                                              @PathVariable("user_id") Long userId,
+                                                              @RequestBody UserRoleRequest request){
+        return userAdminService.userRoleUpdate(token, userId, request);
     }
 }

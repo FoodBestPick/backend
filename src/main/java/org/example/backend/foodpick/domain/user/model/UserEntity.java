@@ -62,12 +62,14 @@ public class UserEntity {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "ban_end_at")
     private LocalDateTime banEndAt;
 
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now().withNano(0);
         this.updatedAt = LocalDateTime.now().withNano(0);
+        this.banEndAt = LocalDateTime.now().withNano(0);
     }
 
     @PreUpdate
@@ -85,6 +87,10 @@ public class UserEntity {
         this.banEndAt = BanEndAt;
     }
 
+    public void updateMessage(String message) {
+        this.statusMessage = message;
+    }
+
     public void updateRefreshToken(String refreshToken) {
         this.refreshToken = refreshToken;
     }
@@ -100,6 +106,10 @@ public class UserEntity {
 
     public void updateImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public void updateRole(UserRole role) {
+        this.role = role;
     }
 
     public static UserEntity ofSignUp(String email, String password, String nickname) {
