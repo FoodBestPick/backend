@@ -26,11 +26,13 @@ public enum ErrorException {
     ALREADY_IMPOSED(400, "이미 제재된 신고입니다."),
     INVALID_REPORT_TYPE(400, "해당 신고는 유저를 대상으로 하지 않습니다."),
     CANNOT_APPLY_TO_OWN_PROJECT(400, "자신이 생성한 프로젝트에는 지원할 수 없습니다."),
+    INVALID_WARNING_RANGE(400, "경고 횟수 범위를 벗어났습니다."),
 
     UNAUTHORIZED(401, "인증 권한이 없습니다."),
     TOKEN_EXPIRED(401, "토큰이 만료되었습니다."),
     USER_ID_NOT_FOUND(401, "해당 유저가 토큰에 존재하지 않습니다."),
     EMAIL_VERTIFICATION(401, "이메일 인증을 해주세요."),
+    INVALID_REFRESH_TOKEN(401, "유효하지 않은 리프레시 토큰입니다."),
 
     AUTHOR_ONLY(403, "해당 공고의 기획자만 조회 가능합니다."),
     CAN_NOT_DELETE_ALARM(403, "해당 알람을 삭제할 수 없습니다."),
@@ -38,6 +40,7 @@ public enum ErrorException {
     FAIL_PROJECT_UPDATE(403, "작성자만 수정 가능합니다."),
     NOT_COMMENT_OWNER(403, "작성자 및 프로젝트 작성자만 댓글을 삭제할 수 있습니다."),
     NOT_INQUIRY_DELETE(403, "문의글을 삭제할 권한이 없습니다."),
+    NOT_USER_DELETE(403, "본인만 계정을 삭제할 수 있습니다."),
     NO_PERMISSION(403, "관리자 기능입니다."),
     PERMANENTLY_BANNED(403, "영구 정지된 계정입니다. 관리자에게 문의해주세요."),
     TEMP_BANNED(403, "정지된 계정입니다."),
