@@ -1,7 +1,11 @@
 package org.example.backend.foodpick.domain.user.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.coyote.Response;
+import org.example.backend.foodpick.domain.user.dto.SuspendeRequest;
 import org.example.backend.foodpick.domain.user.dto.UserResponse;
+import org.example.backend.foodpick.domain.user.dto.UserRoleRequest;
 import org.example.backend.foodpick.domain.user.dto.WarningUpdateReqeust;
 import org.example.backend.foodpick.domain.user.model.UserEntity;
 import org.example.backend.foodpick.domain.user.model.UserRole;
@@ -15,10 +19,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class UserAdminService {
     private final UserRepository userRepository;
@@ -80,6 +84,67 @@ public class UserAdminService {
         userRepository.save(user);
 
         return ResponseEntity.ok(new ApiResponse<>(200, "해당 유저의 경고 누적 및 제재 처리가 완료되었습니다.", null));
+    }
+
+    public ResponseEntity<ApiResponse<String>> userSuspende(String token, Long userId, SuspendeRequest request) {
+
+        Long adminId = jwtTokenValidator.getUserId(token);
+
+        UserEntity admin = userRepository.findById(adminId)
+                .orElseThrow(() -> new CustomException(ErrorException.USER_NOT_FOUND));
+
+        if (admin.getRole() != UserRole.ADMIN) {
+            throw new CustomException(ErrorException.NO_PERMISSION);
+        }
+
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorException.USER_NOT_FOUND));
+
+        int days = request.getDay();
+
+        if (days <= 0) {
+            throw new CustomException(ErrorException.INVALID_BAN_DURATION);
+        }
+
+        LocalDateTime banEndAt;
+
+        if (days == 999) {
+            banEndAt = LocalDateTime.MAX;
+        } else {
+            banEndAt = LocalDateTime.now().plusDays(days).withNano(0);
+        }
+
+        user.updateStatus(UserStatus.SUSPENDED, banEndAt);
+        user.updateMessage(request.getMessage());
+        userRepository.save(user);
+
+        return ResponseEntity.ok(new ApiResponse<>(200, "해당 유저의 정지 처리가 완료되었습니다.", null));
+    }
+
+    public ResponseEntity<ApiResponse<String>> userRoleUpdate(String token, Long userId, UserRoleRequest request){
+
+        Long adminId = jwtTokenValidator.getUserId(token);
+
+        UserEntity admin = userRepository.findById(adminId)
+                .orElseThrow(() -> new CustomException(ErrorException.USER_NOT_FOUND));
+
+        if (admin.getRole() != UserRole.ADMIN) {
+            throw new CustomException(ErrorException.NO_PERMISSION);
+        }
+
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorException.USER_NOT_FOUND));
+
+        UserRole newRole = request.getRole();
+
+        if (newRole == null) {
+            throw new CustomException(ErrorException.INVALID_ROLE);
+        }
+
+        user.updateRole(newRole);
+        userRepository.save(user);
+
+        return ResponseEntity.ok(new ApiResponse<>(200, "해당 유저의 역할이 변경되었습니다.", null));
     }
 
     private LocalDateTime calculateBanDuration(int warning) {
