@@ -12,4 +12,5 @@ import lombok.NoArgsConstructor;
 public class TagResponse {
     private Long id;
     private String name;
+    private String category; // ✅ 추가
 }

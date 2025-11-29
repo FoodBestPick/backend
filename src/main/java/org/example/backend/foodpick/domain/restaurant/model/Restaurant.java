@@ -27,7 +27,7 @@ public class Restaurant {
     @Column(name = "RESTAURANT_INTRODUCE", length = 500)
     private String introduce;
 
-    @Column(name = "RESTAURANT_ADDRESS", nullable = false, length = 255)
+    @Column(name = "RESTAURANT_ADDRESS", nullable = true, length = 255)
     private String address;
 
     @Column(name = "RESTAURANT_COUNT", nullable = false)

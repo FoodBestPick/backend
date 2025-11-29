@@ -7,7 +7,7 @@ import lombok.Getter;
 @Schema(description = "API 공통 응답 객체")
 public class ApiResponse<T> {
 
-    @Schema(description = "상태 코드", example = "401")
+    @Schema(description = "상태 코드", example = "200")
     private final int code;
 
     @Schema(description = "응답 메시지", example = "성공적으로 처리되었습니다.")
@@ -22,6 +22,12 @@ public class ApiResponse<T> {
         this.data = data;
     }
 
+    // 성공 응답 생성 메서드
+    public static <T> ApiResponse<T> success(T data) {
+        return new ApiResponse<>(200, "요청이 성공적으로 처리되었습니다.", data);
+    }
+
+    // 실패 응답 생성 메서드
     public static <T> ApiResponse<T> failure(String message, int code) {
         return new ApiResponse<>(code, message, null);
     }
