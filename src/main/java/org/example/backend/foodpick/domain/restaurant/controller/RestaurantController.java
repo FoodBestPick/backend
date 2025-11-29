@@ -26,16 +26,17 @@ public class RestaurantController {
     private final RestaurantService restaurantService;
     
     /**
-     * ✅ 맛집 등록
+     * 맛집 등록
      * POST /restaurant
      */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<RestaurantResponse>> create(
             @ModelAttribute RestaurantCreateRequest request,
-            @RequestPart(required = false) List<MultipartFile> files,
-            @RequestHeader("Authorization") String authorization) {
+            @RequestPart(value = "files", required = false) List<MultipartFile> files,
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
         
-        String token = extractToken(authorization);
+        // 토큰 추출 로직 (간소화)
+        String token = (authorization != null && authorization.startsWith("Bearer ")) ? authorization.substring(7) : "";
         
         try {
             RestaurantResponse response = restaurantService.create(request, files, token);
@@ -48,100 +49,63 @@ public class RestaurantController {
     }
 
     /**
-     * 음식점 목록 조회 (페이징)
-     * GET /restaurant?page=0&size=10
-     */
-    @GetMapping
-    public ResponseEntity<ApiResponse<Page<Restaurant>>> listRestaurants(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        return restaurantService.listRestaurants(pageable);
-    }
-
-    /**
-     * 음식점 상세 조회
-     * GET /restaurant/{id}
-     */
-    @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<Restaurant>> getRestaurant(@PathVariable Long id) {
-        return restaurantService.getRestaurantById(id);
-    }
-
-    /**
-     * 음식점 정보 수정
+     * 맛집 수정
      * PUT /restaurant/{id}
      */
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<Void>> updateRestaurant(
+    public ResponseEntity<ApiResponse<Void>> update(
             @PathVariable Long id,
             @ModelAttribute RestaurantUpdateRequest request,
-            @RequestPart(required = false) List<MultipartFile> files,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files,
             @RequestHeader(value = "Authorization", required = false) String authorization) {
-        
-        String token = extractToken(authorization);
+        String token = (authorization != null && authorization.startsWith("Bearer ")) ? authorization.substring(7) : "";
         return restaurantService.updateRestaurant(id, request, files, token);
     }
 
     /**
-     * 음식점 삭제
+     * 맛집 삭제
      * DELETE /restaurant/{id}
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteRestaurant(
+    public ResponseEntity<ApiResponse<Void>> delete(
             @PathVariable Long id,
             @RequestHeader(value = "Authorization", required = false) String authorization) {
         
-        String token = extractToken(authorization);
+        String token = (authorization != null && authorization.startsWith("Bearer ")) ? authorization.substring(7) : "";
         return restaurantService.deleteRestaurant(id, token);
     }
 
     /**
-     * 음식점 이름으로 검색
-     * GET /restaurant/search/name?name=맛있는&page=0&size=10
+     * ✅ [통합 검색] 프론트엔드 SearchViewModel에서 호출
+     * GET /restaurant/search
      */
-    @GetMapping("/search/name")
-    public ResponseEntity<ApiResponse<Page<Restaurant>>> searchByName(
-            @RequestParam String name,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sort,
-            @RequestParam(defaultValue = "desc") String direction) {
-        
-        Pageable pageable = createPageable(page, size, sort, direction);
-        return restaurantService.searchByName(name, pageable);
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<List<RestaurantResponse>>> search(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) List<String> tags,
+            @RequestParam(required = false) Integer minPrice,
+            @RequestParam(required = false) Integer maxPrice
+    ) {
+        return restaurantService.searchRestaurants(keyword, category, tags, minPrice, maxPrice);
     }
 
     /**
-     * 주소로 검색
-     * GET /restaurant/search/address?address=강남&page=0&size=10
+     * 전체 목록 (페이징)
      */
-    @GetMapping("/search/address")
-    public ResponseEntity<ApiResponse<Page<Restaurant>>> searchByAddress(
-            @RequestParam String address,
+    @GetMapping
+    public ResponseEntity<ApiResponse<Page<RestaurantResponse>>> listRestaurants(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sort,
-            @RequestParam(defaultValue = "desc") String direction) {
-        
-        Pageable pageable = createPageable(page, size, sort, direction);
-        return restaurantService.searchByAddress(address, pageable);
+            @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        return restaurantService.listRestaurants(pageable);
     }
 
     /**
-     * Authorization 헤더에서 토큰 추출
+     * 상세 조회
      */
-    private String extractToken(String authorization) {
-        if (authorization != null && authorization.startsWith("Bearer ")) {
-            return authorization.substring(7);
-        }
-        return authorization;
-    }
-
-    private Pageable createPageable(int page, int size, String sort, String direction) {
-        Sort.Direction sortDirection = direction.equalsIgnoreCase("asc") 
-                ? Sort.Direction.ASC 
-                : Sort.Direction.DESC;
-        return PageRequest.of(page, size, Sort.by(sortDirection, sort));
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<RestaurantResponse>> getRestaurant(@PathVariable Long id) {
+        return restaurantService.getRestaurantById(id);
     }
 }

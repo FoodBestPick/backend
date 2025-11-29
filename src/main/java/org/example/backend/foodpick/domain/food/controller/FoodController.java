@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.backend.foodpick.domain.food.dto.FoodRequest;
 import org.example.backend.foodpick.domain.food.dto.FoodResponse;
 import org.example.backend.foodpick.domain.food.service.FoodService;
-import org.example.backend.foodpick.domain.restaurant.model.Restaurant;
+import org.example.backend.foodpick.domain.restaurant.dto.RestaurantResponse; // ✅ Import 추가
 import org.example.backend.foodpick.global.util.ApiResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -31,29 +31,29 @@ public class FoodController {
         return foodService.getAllFoods();
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<FoodResponse>> getFoodById(@PathVariable(name = "id") Long id) {
+        return foodService.getFoodById(id);
+    }
+
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> updateFood(
-            @PathVariable Long id,
-            @RequestBody FoodRequest request) {
+    public ResponseEntity<ApiResponse<Void>> updateFood(@PathVariable(name = "id") Long id, @RequestBody FoodRequest request) {
         return foodService.updateFood(id, request);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteFood(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> deleteFood(@PathVariable(name = "id") Long id) {
         return foodService.deleteFood(id);
     }
 
-    /**
-     * ✅ 음식 카테고리명으로 음식점 검색
-     * GET /food/search?name=한식&page=0&size=10
-     */
+    // ✅ [수정] 반환 타입: Page<Restaurant> -> Page<RestaurantResponse>
     @GetMapping("/search")
-    public ResponseEntity<ApiResponse<Page<Restaurant>>> searchByFood(
-            @RequestParam String name,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sort,
-            @RequestParam(defaultValue = "desc") String direction) {
+    public ResponseEntity<ApiResponse<Page<RestaurantResponse>>> searchByFood(
+            @RequestParam(name = "name") String name,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size,
+            @RequestParam(name = "sort", defaultValue = "id") String sort,
+            @RequestParam(name = "direction", defaultValue = "desc") String direction) {
         
         Sort.Direction sortDirection = direction.equalsIgnoreCase("asc") 
                 ? Sort.Direction.ASC 
