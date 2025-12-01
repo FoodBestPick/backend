@@ -131,6 +131,10 @@ public class AuthService {
 
     public ResponseEntity<ApiResponse<String>> emailSend(EmailSendRequest request) {
 
+        if (authRepository.existsByEmail(request.getEmail())) {
+            throw new CustomException(ErrorException.DUPLICATE_EMAIL);
+        }
+
         if (request.getEmail() == null || !request.getEmail().matches(EMAIL_REGEX)) {
             throw new CustomException(ErrorException.INVALID_EMAIL_FORMAT);
         }
