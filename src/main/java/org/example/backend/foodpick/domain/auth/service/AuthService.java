@@ -15,11 +15,14 @@ import org.example.backend.foodpick.global.exception.ErrorException;
 import org.example.backend.foodpick.global.jwt.JwtTokenProvider;
 import org.example.backend.foodpick.global.jwt.JwtTokenValidator;
 import org.example.backend.foodpick.global.util.ApiResponse;
+import org.example.backend.foodpick.infra.redis.service.RedisService;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -31,6 +34,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtTokenValidator jwtTokenValidator;
+    private final RedisService redisService;
 
     private static final String EMAIL_REGEX =
             "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}$";
@@ -88,14 +92,19 @@ public class AuthService {
             throw new CustomException(ErrorException.INVALID_PASSWORD);
         }
 
+        redisService.recordLogin(user.getId(), user.getRole());
+        redisService.recordVisit(user.getId(), user.getRole());
+
         String accessToken = jwtTokenProvider.generateToken(user.getId());
         String refreshToken = user.getRefreshToken();
 
         if (refreshToken == null || !jwtTokenValidator.validateRefreshToken(refreshToken)) {
             refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
             user.updateRefreshToken(refreshToken);
-            authRepository.save(user);
         }
+
+        user.updatedAt(LocalDateTime.now().withNano(0));
+        authRepository.save(user);
 
         ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)

@@ -1,15 +1,14 @@
 package org.example.backend.foodpick.domain.user.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.example.backend.foodpick.domain.user.dto.SuspendeRequest;
-import org.example.backend.foodpick.domain.user.dto.UserResponse;
-import org.example.backend.foodpick.domain.user.dto.UserRoleRequest;
-import org.example.backend.foodpick.domain.user.dto.WarningUpdateReqeust;
+import org.example.backend.foodpick.domain.user.dto.*;
 import org.example.backend.foodpick.domain.user.service.UserAdminService;
 import org.example.backend.foodpick.global.util.ApiResponse;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -42,5 +41,19 @@ public class UserAdminController {
                                                               @PathVariable("user_id") Long userId,
                                                               @RequestBody UserRoleRequest request){
         return userAdminService.userRoleUpdate(token, userId, request);
+    }
+
+    @GetMapping("/dashboard")
+    public ResponseEntity<ApiResponse<UserDashboardResponse>> getDashboard(@RequestHeader("Authorization") String token){
+        return userAdminService.getDashboard(token);
+    }
+
+    @GetMapping("/dashboard/detail")
+    public ResponseEntity<ApiResponse<UserStatsDetailResponse>> getUserStats(
+            @RequestHeader("Authorization") String token,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
+    ) {
+        return userAdminService.getUserStats(token, startDate, endDate);
     }
 }
