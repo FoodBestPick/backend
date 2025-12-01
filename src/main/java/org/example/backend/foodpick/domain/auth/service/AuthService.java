@@ -129,7 +129,7 @@ public class AuthService {
     }
 
 
-    public ResponseEntity<ApiResponse<String>> emailSend(EmailSendRequest request) {
+    public ResponseEntity<ApiResponse<String>> emailSendSignUp(EmailSendRequest request) {
 
         if (authRepository.existsByEmail(request.getEmail())) {
             throw new CustomException(ErrorException.DUPLICATE_EMAIL);
@@ -141,6 +141,22 @@ public class AuthService {
 
         String authCode = emailService.generateAuthCode();
 
+        emailService.saveAuthCode(request.getEmail(), authCode);
+        emailService.sendAuthCode(request.getEmail(), authCode);
+
+        return ResponseEntity.ok(new ApiResponse<>(200, "이메일 인증번호가 전송되었습니다.", null));
+    }
+
+    public ResponseEntity<ApiResponse<String>> emailSendResetPassword(EmailSendRequest request) {
+
+        if (request.getEmail() == null || !request.getEmail().matches(EMAIL_REGEX)) {
+            throw new CustomException(ErrorException.INVALID_EMAIL_FORMAT);
+        }
+
+        UserEntity user = authRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new CustomException(ErrorException.USER_NOT_FOUND));
+
+        String authCode = emailService.generateAuthCode();
         emailService.saveAuthCode(request.getEmail(), authCode);
         emailService.sendAuthCode(request.getEmail(), authCode);
 
