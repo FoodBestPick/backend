@@ -112,6 +112,10 @@ public class UserEntity {
         this.role = role;
     }
 
+    public void updatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
     public static UserEntity ofSignUp(String email, String password, String nickname) {
         return UserEntity.builder()
                 .email(email)

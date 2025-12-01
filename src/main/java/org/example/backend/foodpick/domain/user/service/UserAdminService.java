@@ -3,21 +3,22 @@ package org.example.backend.foodpick.domain.user.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.coyote.Response;
-import org.example.backend.foodpick.domain.user.dto.SuspendeRequest;
-import org.example.backend.foodpick.domain.user.dto.UserResponse;
-import org.example.backend.foodpick.domain.user.dto.UserRoleRequest;
-import org.example.backend.foodpick.domain.user.dto.WarningUpdateReqeust;
+import org.example.backend.foodpick.domain.user.dto.*;
 import org.example.backend.foodpick.domain.user.model.UserEntity;
 import org.example.backend.foodpick.domain.user.model.UserRole;
 import org.example.backend.foodpick.domain.user.model.UserStatus;
+import org.example.backend.foodpick.domain.user.repository.UserQueryRepository;
 import org.example.backend.foodpick.domain.user.repository.UserRepository;
 import org.example.backend.foodpick.global.exception.CustomException;
 import org.example.backend.foodpick.global.exception.ErrorException;
 import org.example.backend.foodpick.global.jwt.JwtTokenValidator;
 import org.example.backend.foodpick.global.util.ApiResponse;
+import org.example.backend.foodpick.infra.redis.service.RedisService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -27,6 +28,8 @@ import java.util.List;
 public class UserAdminService {
     private final UserRepository userRepository;
     private final JwtTokenValidator jwtTokenValidator;
+    private final UserQueryRepository userQueryRepository;
+    private final RedisService redisService;
 
     public ResponseEntity<ApiResponse<List<UserResponse>>> getUserAll(String token){
         Long myId = jwtTokenValidator.getUserId(token);
@@ -145,6 +148,137 @@ public class UserAdminService {
         userRepository.save(user);
 
         return ResponseEntity.ok(new ApiResponse<>(200, "해당 유저의 역할이 변경되었습니다.", null));
+    }
+
+    public ResponseEntity<ApiResponse<UserDashboardResponse>> getDashboard(String token) {
+
+        Long adminId = jwtTokenValidator.getUserId(token);
+
+        UserEntity admin = userRepository.findById(adminId)
+                .orElseThrow(() -> new CustomException(ErrorException.USER_NOT_FOUND));
+
+        if (admin.getRole() != UserRole.ADMIN) {
+            throw new CustomException(ErrorException.NO_PERMISSION);
+        }
+
+        long totalUsers = userQueryRepository.countAllUsers();
+        List<Long> allUserDataList = userQueryRepository.findAllUserData();
+
+        // 주간 방문 통계 (Monday ~ Sunday)
+        LocalDate today = LocalDate.now();
+        LocalDate weekStart = today.with(DayOfWeek.MONDAY);
+        LocalDate weekEnd = today.with(DayOfWeek.SUNDAY);
+
+        List<Integer> weekTimeSeries = redisService.getTimeSeries(weekStart, weekEnd);
+
+        int[] allUserData = allUserDataList.stream().mapToInt(Long::intValue).toArray();
+        int[] weekUserData = weekTimeSeries.stream().mapToInt(Integer::intValue).toArray();
+
+        /* 이 아래 부분은 아직 맛집/리뷰 데이터가 없으므로 하드코딩 유지 */
+        int restaurants = 1234;
+        int todayReviews = 52;
+        int weekReviews = 280;
+        int monthReviews = 1128;
+
+        int[] barData = new int[]{50, 60, 70, 65, 80, 90, 70};
+
+        PieItem[] pieData = new PieItem[]{
+                PieItem.builder().name("한식").population(40).build(),
+                PieItem.builder().name("중식").population(20).build(),
+                PieItem.builder().name("일식").population(15).build(),
+                PieItem.builder().name("양식").population(10).build(),
+                PieItem.builder().name("카페").population(15).build()
+        };
+
+        UserDashboardResponse response = UserDashboardResponse.create(
+                totalUsers,
+                restaurants,
+                todayReviews,
+                weekReviews,
+                monthReviews,
+                allUserData,
+                weekUserData,
+                barData,
+                pieData
+        );
+
+        return ResponseEntity.ok(new ApiResponse<>(200, "대시보드 조회 성공", response));
+    }
+
+    public ResponseEntity<ApiResponse<UserStatsDetailResponse>> getUserStats(
+            String token,
+            LocalDate startDate,
+            LocalDate endDate
+    ) {
+        Long adminId = jwtTokenValidator.getUserId(token);
+
+        UserEntity admin = userRepository.findById(adminId)
+                .orElseThrow(() -> new CustomException(ErrorException.USER_NOT_FOUND));
+
+        if (admin.getRole() != UserRole.ADMIN) {
+            throw new CustomException(ErrorException.NO_PERMISSION);
+        }
+
+        LocalDate today = LocalDate.now();
+
+        long todayVisitors = redisService.getTodayVisitors();
+        long todayJoins = userRepository.countByCreatedAtBetween(
+                today.atStartOfDay(), today.atTime(23,59,59)
+        );
+        List<Integer> todaySeries = redisService.getTimeSeries(today, today);
+
+        StatsPeriodDetail todayStats =
+                StatsPeriodDetail.ofUserStats(todayVisitors, todayJoins, todaySeries);
+
+        LocalDate weekStart = today.with(DayOfWeek.MONDAY);
+        LocalDate weekEnd = today.with(DayOfWeek.SUNDAY);
+
+        long weekVisitors = redisService.getWeekVisitors();
+        long weekJoins = userRepository.countByCreatedAtBetween(
+                weekStart.atStartOfDay(), weekEnd.atTime(23,59,59)
+        );
+        List<Integer> weekSeries = redisService.getTimeSeries(weekStart, weekEnd);
+
+        StatsPeriodDetail weekStats =
+                StatsPeriodDetail.ofUserStats(weekVisitors, weekJoins, weekSeries);
+
+        LocalDate monthStart = today.withDayOfMonth(1);
+        LocalDate monthEnd = today.withDayOfMonth(today.lengthOfMonth());
+
+        long monthVisitors = redisService.getMonthVisitors();
+        long monthJoins = userRepository.countByCreatedAtBetween(
+                monthStart.atStartOfDay(), monthEnd.atTime(23,59,59)
+        );
+        List<Integer> monthSeries = redisService.getTimeSeries(monthStart, monthEnd);
+
+        StatsPeriodDetail monthStats =
+                StatsPeriodDetail.ofUserStats(monthVisitors, monthJoins, monthSeries);
+
+
+        StatsPeriodDetail customStats;
+
+        if (startDate != null && endDate != null) {
+            long customVisitors = redisService.getCustomVisitors(startDate, endDate);
+            long customJoins = userRepository.countByCreatedAtBetween(
+                    startDate.atStartOfDay(), endDate.atTime(23,59,59)
+            );
+            List<Integer> customSeries = redisService.getTimeSeries(startDate, endDate);
+
+            customStats = StatsPeriodDetail.ofUserStats(customVisitors, customJoins, customSeries);
+
+        } else {
+            // 기본값
+            customStats = StatsPeriodDetail.ofUserStats(0, 0, List.of());
+        }
+
+        UserStatsDetailResponse response = UserStatsDetailResponse.of(
+                todayStats,
+                weekStats,
+                monthStats,
+                customStats
+        );
+
+        return ResponseEntity.ok(new ApiResponse<>(200, "유저 통계 조회 성공", response));
     }
 
     private LocalDateTime calculateBanDuration(int warning) {
