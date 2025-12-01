@@ -30,9 +30,14 @@ public class AuthController {
         return authService.signIn(request, response);
     }
 
-    @PostMapping("/email-send")
-    public ResponseEntity<ApiResponse<String>> emailSend(@RequestBody EmailSendRequest request){
-        return authService.emailSend(request);
+    @PostMapping("/email-send/signup")
+    public ResponseEntity<ApiResponse<String>> emailSendSignUp(@RequestBody EmailSendRequest request){
+        return authService.emailSendSignUp(request);
+    }
+
+    @PostMapping("/email-send/password/reset")
+    public ResponseEntity<ApiResponse<String>> emailSendResetPassword(@RequestBody EmailSendRequest request){
+        return authService.emailSendResetPassword(request);
     }
 
     @PostMapping("/email-verify")
