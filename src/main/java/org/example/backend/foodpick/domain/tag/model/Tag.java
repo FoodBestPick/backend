@@ -19,6 +19,10 @@ public class Tag {
     @Column(name = "TAG_NAME", nullable = false, unique = true)
     private String name;
 
+    // ✅ 카테고리 추가
+    @Column(name = "TAG_CATEGORY", length = 20)
+    private String category; // PURPOSE, FACILITY, ATMOSPHERE
+
     @Column(name = "TAG_CREATED_DATE", nullable = false)
     private LocalDateTime createdDate;
 
@@ -39,5 +43,10 @@ public class Tag {
     // 간단한 업데이트 메서드
     public void updateName(String name) {
         if (name != null && !name.isBlank()) this.name = name;
+    }
+
+    // ✅ 카테고리 업데이트 메서드 추가
+    public void updateCategory(String category) {
+        this.category = category;
     }
 }

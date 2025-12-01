@@ -16,7 +16,8 @@ public class RestaurantTime {
     @Column(name = "RESTAURANT_TIME_ID")
     private Long id;
 
-    @Column(name = "RESTAURANT_TIME_WEEK", length = 5, nullable = false)
+    // ✅ [수정] 길이 5 -> 20 (Monday 등 영문 요일 저장 시 에러 방지)
+    @Column(name = "RESTAURANT_TIME_WEEK", length = 20, nullable = false)
     private String week;
 
     @Column(name = "RESTAURANT_STARTTIME", length = 10, nullable = false)
