@@ -80,4 +80,9 @@ public class ReportEntity {
                 .build();
     }
 
+    public void update(UserEntity admin) {
+        this.isImposed = true;
+        this.status = ReportStatus.APPROVED;
+        this.admin = admin;
+    }
 }

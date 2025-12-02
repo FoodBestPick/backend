@@ -1,5 +1,6 @@
 package org.example.backend.foodpick.domain.report.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Builder;
 import lombok.Getter;
 import org.example.backend.foodpick.domain.report.model.ReportEntity;
@@ -19,6 +20,8 @@ public class ReportListResponse {
     private Long targetId;
     private Long reporterId;
     private ReportStatus status;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
 
     public static ReportListResponse from(ReportEntity e) {
