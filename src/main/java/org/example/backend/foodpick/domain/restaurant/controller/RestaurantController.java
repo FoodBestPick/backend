@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.example.backend.foodpick.domain.restaurant.dto.RestaurantCreateRequest;
 import org.example.backend.foodpick.domain.restaurant.dto.RestaurantResponse;
 import org.example.backend.foodpick.domain.restaurant.dto.RestaurantUpdateRequest;
-import org.example.backend.foodpick.domain.restaurant.model.Restaurant;
 import org.example.backend.foodpick.domain.restaurant.service.RestaurantService;
 import org.example.backend.foodpick.global.util.ApiResponse;
 import org.springframework.data.domain.Page;
@@ -54,7 +53,7 @@ public class RestaurantController {
      */
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<Void>> update(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @ModelAttribute RestaurantUpdateRequest request,
             @RequestPart(value = "files", required = false) List<MultipartFile> files,
             @RequestHeader(value = "Authorization", required = false) String authorization) {
@@ -68,7 +67,7 @@ public class RestaurantController {
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @RequestHeader(value = "Authorization", required = false) String authorization) {
         
         String token = (authorization != null && authorization.startsWith("Bearer ")) ? authorization.substring(7) : "";
@@ -76,16 +75,16 @@ public class RestaurantController {
     }
 
     /**
-     * ✅ [통합 검색] 프론트엔드 SearchViewModel에서 호출
+     * [통합 검색] 프론트엔드 SearchViewModel에서 호출
      * GET /restaurant/search
      */
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<List<RestaurantResponse>>> search(
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String category,
-            @RequestParam(required = false) List<String> tags,
-            @RequestParam(required = false) Integer minPrice,
-            @RequestParam(required = false) Integer maxPrice
+            @RequestParam(value = "keyword", required = false) String keyword,
+            @RequestParam(value = "category", required = false) String category,
+            @RequestParam(value = "tags", required = false) List<String> tags,
+            @RequestParam(value = "minPrice", required = false) Integer minPrice,
+            @RequestParam(value = "maxPrice", required = false) Integer maxPrice
     ) {
         return restaurantService.searchRestaurants(keyword, category, tags, minPrice, maxPrice);
     }
@@ -95,8 +94,8 @@ public class RestaurantController {
      */
     @GetMapping
     public ResponseEntity<ApiResponse<Page<RestaurantResponse>>> listRestaurants(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
         return restaurantService.listRestaurants(pageable);
     }
@@ -105,7 +104,7 @@ public class RestaurantController {
      * 상세 조회
      */
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<RestaurantResponse>> getRestaurant(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<RestaurantResponse>> getRestaurant(@PathVariable("id") Long id) {
         return restaurantService.getRestaurantById(id);
     }
 }

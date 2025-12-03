@@ -20,22 +20,22 @@ public class RestaurantPictureController {
     // CREATE: URL 리스트로 DB 저장
     @PostMapping
     public ResponseEntity<ApiResponse<List<PictureResponse>>> add(
-            @PathVariable Long restaurantId,
+            @PathVariable("restaurantId") Long restaurantId,
             @RequestBody List<String> urls) {
         return pictureService.addPictures(restaurantId, urls);
     }
 
     // READ: 모든 사진 조회
     @GetMapping
-    public ResponseEntity<ApiResponse<List<PictureResponse>>> getAll(@PathVariable Long restaurantId) {
+    public ResponseEntity<ApiResponse<List<PictureResponse>>> getAll(@PathVariable("restaurantId") Long restaurantId) {
         return pictureService.getAllPictures(restaurantId);
     }
 
     // DELETE: DB + S3 삭제
     @DeleteMapping("/{pictureId}")
     public ResponseEntity<ApiResponse<String>> delete(
-            @PathVariable Long restaurantId,
-            @PathVariable Long pictureId) {
+            @PathVariable("restaurantId") Long restaurantId,
+            @PathVariable("pictureId") Long pictureId) {
         
         ResponseEntity<ApiResponse<String>> response = pictureService.deletePicture(restaurantId, pictureId);
         

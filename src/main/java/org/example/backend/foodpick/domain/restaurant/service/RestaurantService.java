@@ -120,8 +120,20 @@ public class RestaurantService {
             }
 
             // 5. 카테고리 저장
-            if (request.getCategories() != null) {
-                for (String categoryName : request.getCategories()) {
+            if (request.getCategories() != null && !request.getCategories().isBlank()) {
+                List<String> categoryList = new ArrayList<>();
+                try {
+                    String catJson = request.getCategories().trim();
+                    if (catJson.startsWith("[")) {
+                        categoryList = objectMapper.readValue(catJson, new TypeReference<List<String>>() {});
+                    } else {
+                        categoryList.add(catJson);
+                    }
+                } catch (Exception e) {
+                    categoryList.add(request.getCategories());
+                }
+
+                for (String categoryName : categoryList) {
                     if (categoryName == null || categoryName.isBlank()) continue;
                     Food food = foodRepository.findByName(categoryName)
                             .orElseGet(() -> foodRepository.save(Food.builder().name(categoryName).build()));
@@ -203,9 +215,21 @@ public class RestaurantService {
         }
 
         // 카테고리 업데이트
-        if (req.getCategories() != null) {
+        if (req.getCategories() != null && !req.getCategories().isBlank()) {
             foodBridgeRepository.deleteAllByRestaurant_Id(r.getId());
-            for (String catName : req.getCategories()) {
+            List<String> categoryList = new ArrayList<>();
+            try {
+                String catJson = req.getCategories().trim();
+                if (catJson.startsWith("[")) {
+                    categoryList = objectMapper.readValue(catJson, new TypeReference<List<String>>() {});
+                } else {
+                    categoryList.add(catJson);
+                }
+            } catch (Exception e) {
+                categoryList.add(req.getCategories());
+            }
+
+            for (String catName : categoryList) {
                 Food food = foodRepository.findByName(catName)
                         .orElseGet(() -> foodRepository.save(Food.builder().name(catName).build()));
                 foodBridgeRepository.save(FoodBridge.builder().restaurant(r).food(food).build());

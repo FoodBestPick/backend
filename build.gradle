@@ -48,6 +48,10 @@ dependencies {
     implementation("io.jsonwebtoken:jjwt-jackson:0.11.5") // jwt
 }
 
+tasks.withType(JavaCompile) {
+    options.compilerArgs.add("-parameters")
+}
+
 tasks.named('test') {
     useJUnitPlatform()
 }

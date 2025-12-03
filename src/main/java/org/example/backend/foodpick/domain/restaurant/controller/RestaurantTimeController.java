@@ -20,22 +20,22 @@ public class RestaurantTimeController {
     // ✅ CREATE
     @PostMapping
     public ResponseEntity<ApiResponse<TimeResponse>> add(
-            @PathVariable Long restaurantId,
+            @PathVariable("restaurantId") Long restaurantId,
             @Valid @RequestBody TimeRequest req) {
         return timeService.addTime(restaurantId, req);
     }
 
     // ✅ READ: 특정 식당의 모든 영업시간 조회
     @GetMapping
-    public ResponseEntity<ApiResponse<List<TimeResponse>>> getAll(@PathVariable Long restaurantId) {
+    public ResponseEntity<ApiResponse<List<TimeResponse>>> getAll(@PathVariable("restaurantId") Long restaurantId) {
         return timeService.getAllTimes(restaurantId);
     }
 
     // ✅ UPDATE: 영업시간 수정
     @PutMapping("/{timeId}")
     public ResponseEntity<ApiResponse<TimeResponse>> update(
-            @PathVariable Long restaurantId,
-            @PathVariable Long timeId,
+            @PathVariable("restaurantId") Long restaurantId,
+            @PathVariable("timeId") Long timeId,
             @Valid @RequestBody TimeRequest req) {
         return timeService.updateTime(restaurantId, timeId, req);
     }
@@ -43,8 +43,8 @@ public class RestaurantTimeController {
     // ✅ DELETE
     @DeleteMapping("/{timeId}")
     public ResponseEntity<ApiResponse<Void>> delete(
-            @PathVariable Long restaurantId,
-            @PathVariable Long timeId) {
+            @PathVariable("restaurantId") Long restaurantId,
+            @PathVariable("timeId") Long timeId) {
         return timeService.deleteTime(restaurantId, timeId);
     }
 }

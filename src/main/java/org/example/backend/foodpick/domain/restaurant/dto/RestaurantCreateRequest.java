@@ -11,7 +11,7 @@ public class RestaurantCreateRequest {
     private Double restaurant_latitude;
     private Double restaurant_longitude;
     
-    private List<String> categories; 
+    private String categories; 
     
     private String menus; // JSON String
     
