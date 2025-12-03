@@ -267,4 +267,20 @@ public class AuthService {
         return ResponseEntity.ok(new ApiResponse<>(200, "액세스 토큰 재발급 완료", response));
     }
 
+    public ResponseEntity<ApiResponse<String>> checkNickname(CheckNicknameRequest request) {
+
+        String nickname = request.getNickname();
+
+        if (nickname == null || nickname.trim().isEmpty()) {
+            throw new CustomException(ErrorException.NICKNAME_NOT_VERIFIED);
+        }
+
+        if (authRepository.existsByNickname(nickname)) {
+            throw new CustomException(ErrorException.DUPLICATE_NICKNAME);
+        }
+
+        return ResponseEntity.ok(new ApiResponse<>(200, "중복되지 않은 닉네임입니다.", null));
+    }
+
+
 }

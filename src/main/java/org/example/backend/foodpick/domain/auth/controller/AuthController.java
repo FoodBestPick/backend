@@ -55,4 +55,9 @@ public class AuthController {
         return authService.refreshToken(request);
     }
 
+    @PostMapping("/check-nickname")
+    public ResponseEntity<ApiResponse<String>> checkNickname(@RequestBody CheckNicknameRequest request){
+        return authService.checkNickname(request);
+    }
+
 }
