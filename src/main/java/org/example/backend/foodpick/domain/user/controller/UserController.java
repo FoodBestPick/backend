@@ -2,6 +2,7 @@ package org.example.backend.foodpick.domain.user.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.example.backend.foodpick.domain.user.dto.DeleteUserRequest;
+import org.example.backend.foodpick.domain.user.dto.FcmTokenRequest;
 import org.example.backend.foodpick.domain.user.dto.UserProfileResponse;
 import org.example.backend.foodpick.domain.user.service.UserService;
 import org.example.backend.foodpick.global.util.ApiResponse;
@@ -41,5 +42,11 @@ public class UserController {
     public ResponseEntity<ApiResponse<String>> deleteUser(@RequestHeader("Authorization") String token,
                                                           @RequestBody DeleteUserRequest request){
         return userService.deleteUser(token,request);
+    }
+
+    @PostMapping("/fcm-token")
+    public ResponseEntity<ApiResponse<String>> updateFcmToken(@RequestHeader("Authorization") String token,
+                                                              @RequestBody FcmTokenRequest request){
+        return userService.updateFcmToken(token, request);
     }
 }

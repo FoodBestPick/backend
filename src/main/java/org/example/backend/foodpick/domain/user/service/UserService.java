@@ -2,6 +2,7 @@ package org.example.backend.foodpick.domain.user.service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.backend.foodpick.domain.user.dto.DeleteUserRequest;
+import org.example.backend.foodpick.domain.user.dto.FcmTokenRequest;
 import org.example.backend.foodpick.domain.user.dto.UserProfileResponse;
 import org.example.backend.foodpick.domain.user.model.UserEntity;
 import org.example.backend.foodpick.domain.user.repository.UserRepository;
@@ -13,6 +14,7 @@ import org.example.backend.foodpick.infra.s3.service.S3Service;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
@@ -111,5 +113,19 @@ public class UserService {
 
         userRepository.delete(user);
         return ResponseEntity.ok(new ApiResponse<>(200, "계정탈퇴가 완료되었습니다.", null));
+    }
+
+    @Transactional
+    public ResponseEntity<ApiResponse<String>> updateFcmToken(String token, FcmTokenRequest request) {
+        Long userId = jwtTokenValidator.getUserId(token);
+
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorException.USER_NOT_FOUND));
+
+        user.updateFcmToken(request.getFcmToken());
+
+        userRepository.save(user);
+
+        return ResponseEntity.ok(new ApiResponse<>(200, "Fcm-Token 업데이트가 완료되었습니다.", null));
     }
 }
