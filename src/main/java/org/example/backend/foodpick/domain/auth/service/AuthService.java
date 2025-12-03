@@ -10,16 +10,20 @@ import org.example.backend.foodpick.domain.user.dto.LoginUserResponse;
 import org.example.backend.foodpick.domain.user.model.UserEntity;
 import org.example.backend.foodpick.domain.auth.repository.AuthRepository;
 import org.example.backend.foodpick.domain.user.model.UserRole;
+import org.example.backend.foodpick.domain.user.model.UserStatus;
 import org.example.backend.foodpick.global.exception.CustomException;
 import org.example.backend.foodpick.global.exception.ErrorException;
 import org.example.backend.foodpick.global.jwt.JwtTokenProvider;
 import org.example.backend.foodpick.global.jwt.JwtTokenValidator;
 import org.example.backend.foodpick.global.util.ApiResponse;
+import org.example.backend.foodpick.infra.redis.service.RedisService;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -31,6 +35,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtTokenValidator jwtTokenValidator;
+    private final RedisService redisService;
 
     private static final String EMAIL_REGEX =
             "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}$";
@@ -84,18 +89,40 @@ public class AuthService {
         UserEntity user = authRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new CustomException(ErrorException.USER_NOT_FOUND));
 
+        if (user.getStatus() == UserStatus.SUSPENDED) {
+
+            LocalDateTime now = LocalDateTime.now();
+
+            // 영구정지 (ban_end_at == LocalDateTime.MAX)
+            if (user.getBanEndAt() != null && user.getBanEndAt().equals(LocalDateTime.MAX)) {
+                throw new CustomException(ErrorException.PERMANENTLY_BANNED);
+            }
+
+            // 기간 정지 중 (ban_end_at 미래 날짜)
+            if (user.getBanEndAt() != null && user.getBanEndAt().isAfter(now)) {
+                throw new CustomException(ErrorException.TEMP_BANNED);
+            }
+
+            // 정지 기간이 지났으면 자동 복구
+            if (user.getBanEndAt() != null && user.getBanEndAt().isBefore(now)) {
+                user.clearBan();
+                authRepository.save(user);
+            }
+        }
+
+
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new CustomException(ErrorException.INVALID_PASSWORD);
         }
 
-        String accessToken = jwtTokenProvider.generateToken(user.getId());
-        String refreshToken = user.getRefreshToken();
+        redisService.recordLogin(user.getId(), user.getRole());
+        redisService.recordVisit(user.getId(), user.getRole());
 
-        if (refreshToken == null || !jwtTokenValidator.validateRefreshToken(refreshToken)) {
-            refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
-            user.updateRefreshToken(refreshToken);
-            authRepository.save(user);
-        }
+        String accessToken = jwtTokenProvider.generateToken(user.getId());
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
+
+        user.updatedAt(LocalDateTime.now().withNano(0));
+        authRepository.save(user);
 
         ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)
@@ -120,7 +147,11 @@ public class AuthService {
     }
 
 
-    public ResponseEntity<ApiResponse<String>> emailSend(EmailSendRequest request) {
+    public ResponseEntity<ApiResponse<String>> emailSendSignUp(EmailSendRequest request) {
+
+        if (authRepository.existsByEmail(request.getEmail())) {
+            throw new CustomException(ErrorException.DUPLICATE_EMAIL);
+        }
 
         if (request.getEmail() == null || !request.getEmail().matches(EMAIL_REGEX)) {
             throw new CustomException(ErrorException.INVALID_EMAIL_FORMAT);
@@ -128,6 +159,22 @@ public class AuthService {
 
         String authCode = emailService.generateAuthCode();
 
+        emailService.saveAuthCode(request.getEmail(), authCode);
+        emailService.sendAuthCode(request.getEmail(), authCode);
+
+        return ResponseEntity.ok(new ApiResponse<>(200, "이메일 인증번호가 전송되었습니다.", null));
+    }
+
+    public ResponseEntity<ApiResponse<String>> emailSendResetPassword(EmailSendRequest request) {
+
+        if (request.getEmail() == null || !request.getEmail().matches(EMAIL_REGEX)) {
+            throw new CustomException(ErrorException.INVALID_EMAIL_FORMAT);
+        }
+
+        UserEntity user = authRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new CustomException(ErrorException.USER_NOT_FOUND));
+
+        String authCode = emailService.generateAuthCode();
         emailService.saveAuthCode(request.getEmail(), authCode);
         emailService.sendAuthCode(request.getEmail(), authCode);
 
@@ -219,5 +266,21 @@ public class AuthService {
 
         return ResponseEntity.ok(new ApiResponse<>(200, "액세스 토큰 재발급 완료", response));
     }
+
+    public ResponseEntity<ApiResponse<String>> checkNickname(CheckNicknameRequest request) {
+
+        String nickname = request.getNickname();
+
+        if (nickname == null || nickname.trim().isEmpty()) {
+            throw new CustomException(ErrorException.NICKNAME_NOT_VERIFIED);
+        }
+
+        if (authRepository.existsByNickname(nickname)) {
+            throw new CustomException(ErrorException.DUPLICATE_NICKNAME);
+        }
+
+        return ResponseEntity.ok(new ApiResponse<>(200, "중복되지 않은 닉네임입니다.", null));
+    }
+
 
 }

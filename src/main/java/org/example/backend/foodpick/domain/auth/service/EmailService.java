@@ -76,4 +76,5 @@ public class EmailService {
         String key = "email:verified:" + email;
         redisTemplate.delete(key);
     }
+
 }

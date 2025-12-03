@@ -1,4 +1,4 @@
-package org.example.backend.foodpick.infra.redis;
+package org.example.backend.foodpick.infra.redis.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,4 +24,5 @@ public class RedisConfig {
         template.afterPropertiesSet();
         return template;
     }
+
 }

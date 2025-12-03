@@ -16,6 +16,7 @@ import org.example.backend.foodpick.global.exception.ErrorException;
 import org.example.backend.foodpick.global.jwt.JwtTokenProvider;
 import org.example.backend.foodpick.global.jwt.JwtTokenValidator;
 import org.example.backend.foodpick.global.util.ApiResponse;
+import org.example.backend.foodpick.infra.redis.service.RedisService;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -29,6 +30,7 @@ public class OauthService {
     private final AuthRepository authRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtTokenValidator jwtTokenValidator;
+    private final RedisService redisService;
 
     public ResponseEntity<ApiResponse<TokenResponse>> signInKakao(TokenRequest request,
                                                                   HttpServletResponse response) {
@@ -52,14 +54,11 @@ public class OauthService {
 
         authRepository.save(user);
 
-        String accessToken = jwtTokenProvider.generateToken(user.getId());
-        String refreshToken = user.getRefreshToken();
+        redisService.recordLogin(user.getId(), user.getRole());
+        redisService.recordVisit(user.getId(), user.getRole());
 
-        if (refreshToken == null || !jwtTokenValidator.validateRefreshToken(refreshToken)) {
-            refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
-            user.updateRefreshToken(refreshToken);
-            authRepository.save(user);
-        }
+        String accessToken = jwtTokenProvider.generateToken(user.getId());
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
 
         ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)
@@ -70,6 +69,7 @@ public class OauthService {
                 .build();
 
         response.addHeader("Set-Cookie", cookie.toString());
+
 
         TokenResponse data = new TokenResponse(accessToken);
 
@@ -106,14 +106,11 @@ public class OauthService {
 
         authRepository.save(user);
 
-        String accessToken = jwtTokenProvider.generateToken(user.getId());
-        String refreshToken = user.getRefreshToken();
+        redisService.recordLogin(user.getId(), user.getRole());
+        redisService.recordVisit(user.getId(), user.getRole());
 
-        if (refreshToken == null || !jwtTokenValidator.validateRefreshToken(refreshToken)) {
-            refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
-            user.updateRefreshToken(refreshToken);
-            authRepository.save(user);
-        }
+        String accessToken = jwtTokenProvider.generateToken(user.getId());
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
 
         ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)
@@ -124,6 +121,7 @@ public class OauthService {
                 .build();
 
         response.addHeader("Set-Cookie", cookie.toString());
+
 
         TokenResponse data = new TokenResponse(accessToken);
 
@@ -160,14 +158,11 @@ public class OauthService {
 
         authRepository.save(user);
 
-        String accessToken = jwtTokenProvider.generateToken(user.getId());
-        String refreshToken = user.getRefreshToken();
+        redisService.recordLogin(user.getId(), user.getRole());
+        redisService.recordVisit(user.getId(), user.getRole());
 
-        if (refreshToken == null || !jwtTokenValidator.validateRefreshToken(refreshToken)) {
-            refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
-            user.updateRefreshToken(refreshToken);
-            authRepository.save(user);
-        }
+        String accessToken = jwtTokenProvider.generateToken(user.getId());
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
 
         ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)
@@ -279,4 +274,5 @@ public class OauthService {
 
         return new SignInOauthResponse(email, nickname);
     }
+
 }
