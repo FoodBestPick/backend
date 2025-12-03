@@ -58,13 +58,7 @@ public class OauthService {
         redisService.recordVisit(user.getId(), user.getRole());
 
         String accessToken = jwtTokenProvider.generateToken(user.getId());
-        String refreshToken = user.getRefreshToken();
-
-        if (refreshToken == null || !jwtTokenValidator.validateRefreshToken(refreshToken)) {
-            refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
-            user.updateRefreshToken(refreshToken);
-            authRepository.save(user);
-        }
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
 
         ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)
@@ -116,13 +110,7 @@ public class OauthService {
         redisService.recordVisit(user.getId(), user.getRole());
 
         String accessToken = jwtTokenProvider.generateToken(user.getId());
-        String refreshToken = user.getRefreshToken();
-
-        if (refreshToken == null || !jwtTokenValidator.validateRefreshToken(refreshToken)) {
-            refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
-            user.updateRefreshToken(refreshToken);
-            authRepository.save(user);
-        }
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
 
         ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)
@@ -174,13 +162,7 @@ public class OauthService {
         redisService.recordVisit(user.getId(), user.getRole());
 
         String accessToken = jwtTokenProvider.generateToken(user.getId());
-        String refreshToken = user.getRefreshToken();
-
-        if (refreshToken == null || !jwtTokenValidator.validateRefreshToken(refreshToken)) {
-            refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
-            user.updateRefreshToken(refreshToken);
-            authRepository.save(user);
-        }
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
 
         ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)

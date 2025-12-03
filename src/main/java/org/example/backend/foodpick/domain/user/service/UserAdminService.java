@@ -3,6 +3,8 @@ package org.example.backend.foodpick.domain.user.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.coyote.Response;
+import org.example.backend.foodpick.domain.report.repository.ReportRepository;
+import org.example.backend.foodpick.domain.report.service.ReportService;
 import org.example.backend.foodpick.domain.user.dto.*;
 import org.example.backend.foodpick.domain.user.model.UserEntity;
 import org.example.backend.foodpick.domain.user.model.UserRole;
@@ -30,6 +32,7 @@ public class UserAdminService {
     private final JwtTokenValidator jwtTokenValidator;
     private final UserQueryRepository userQueryRepository;
     private final RedisService redisService;
+    private final ReportRepository reportRepository;
 
     public ResponseEntity<ApiResponse<List<UserResponse>>> getUserAll(String token){
         Long myId = jwtTokenValidator.getUserId(token);

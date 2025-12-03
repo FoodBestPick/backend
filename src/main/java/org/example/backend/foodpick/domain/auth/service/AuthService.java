@@ -10,6 +10,7 @@ import org.example.backend.foodpick.domain.user.dto.LoginUserResponse;
 import org.example.backend.foodpick.domain.user.model.UserEntity;
 import org.example.backend.foodpick.domain.auth.repository.AuthRepository;
 import org.example.backend.foodpick.domain.user.model.UserRole;
+import org.example.backend.foodpick.domain.user.model.UserStatus;
 import org.example.backend.foodpick.global.exception.CustomException;
 import org.example.backend.foodpick.global.exception.ErrorException;
 import org.example.backend.foodpick.global.jwt.JwtTokenProvider;
@@ -88,6 +89,28 @@ public class AuthService {
         UserEntity user = authRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new CustomException(ErrorException.USER_NOT_FOUND));
 
+        if (user.getStatus() == UserStatus.SUSPENDED) {
+
+            LocalDateTime now = LocalDateTime.now();
+
+            // 영구정지 (ban_end_at == LocalDateTime.MAX)
+            if (user.getBanEndAt() != null && user.getBanEndAt().equals(LocalDateTime.MAX)) {
+                throw new CustomException(ErrorException.PERMANENTLY_BANNED);
+            }
+
+            // 기간 정지 중 (ban_end_at 미래 날짜)
+            if (user.getBanEndAt() != null && user.getBanEndAt().isAfter(now)) {
+                throw new CustomException(ErrorException.TEMP_BANNED);
+            }
+
+            // 정지 기간이 지났으면 자동 복구
+            if (user.getBanEndAt() != null && user.getBanEndAt().isBefore(now)) {
+                user.clearBan();
+                authRepository.save(user);
+            }
+        }
+
+
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new CustomException(ErrorException.INVALID_PASSWORD);
         }
@@ -96,12 +119,7 @@ public class AuthService {
         redisService.recordVisit(user.getId(), user.getRole());
 
         String accessToken = jwtTokenProvider.generateToken(user.getId());
-        String refreshToken = user.getRefreshToken();
-
-        if (refreshToken == null || !jwtTokenValidator.validateRefreshToken(refreshToken)) {
-            refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
-            user.updateRefreshToken(refreshToken);
-        }
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
 
         user.updatedAt(LocalDateTime.now().withNano(0));
         authRepository.save(user);
