@@ -1,11 +1,16 @@
 package org.example.backend.foodpick.domain.report.service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.backend.foodpick.domain.alarm.dto.SendAlarmRequest;
+import org.example.backend.foodpick.domain.alarm.model.AlarmTargetType;
+import org.example.backend.foodpick.domain.alarm.model.AlarmType;
+import org.example.backend.foodpick.domain.alarm.service.AlarmService;
 import org.example.backend.foodpick.domain.report.dto.SendReportRequest;
 import org.example.backend.foodpick.domain.report.model.ReportEntity;
 import org.example.backend.foodpick.domain.report.repository.ReportRepository;
 import org.example.backend.foodpick.domain.restaurant.repository.RestaurantRepository;
 import org.example.backend.foodpick.domain.user.model.UserEntity;
+import org.example.backend.foodpick.domain.user.model.UserRole;
 import org.example.backend.foodpick.domain.user.repository.UserRepository;
 import org.example.backend.foodpick.global.exception.CustomException;
 import org.example.backend.foodpick.global.exception.ErrorException;
@@ -15,6 +20,8 @@ import org.example.backend.foodpick.global.util.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class ReportService {
@@ -22,6 +29,7 @@ public class ReportService {
     private final JwtTokenValidator jwtTokenValidator;
     private final UserRepository userRepository;
     private final RestaurantRepository restaurantRepository;
+    private final AlarmService alarmService;
 
     public ResponseEntity<ApiResponse<String>> sendReport(String token, SendReportRequest request){
 
@@ -61,12 +69,25 @@ public class ReportService {
                 */
         }
 
-        // 2. 신고 생성 및 저장
         ReportEntity report = ReportEntity.create(reporter, request);
         reportRepository.save(report);
 
+        List<UserEntity> adminList = userRepository.findByRole(UserRole.ADMIN);
+
+        String message = reporter.getNickname() + "님이 새로운 신고를 접수했습니다.";
+
+        for (UserEntity admin : adminList) {
+            SendAlarmRequest alarmRequest = new SendAlarmRequest(
+                    admin.getId(),
+                    AlarmType.REPORT_RECEIVED,
+                    AlarmTargetType.REPORT,
+                    request.getTargetId(),
+                    message
+            );
+
+            alarmService.sendAlarm(reporter.getId(), alarmRequest);
+        }
+
         return ResponseEntity.ok(new ApiResponse<>(200, "신고가 접수되었습니다.", null));
     }
-
-
 }
