@@ -3,6 +3,10 @@ package org.example.backend.foodpick.domain.user.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.coyote.Response;
+import org.example.backend.foodpick.domain.alarm.dto.SendAlarmRequest;
+import org.example.backend.foodpick.domain.alarm.model.AlarmTargetType;
+import org.example.backend.foodpick.domain.alarm.model.AlarmType;
+import org.example.backend.foodpick.domain.alarm.service.AlarmService;
 import org.example.backend.foodpick.domain.report.repository.ReportRepository;
 import org.example.backend.foodpick.domain.report.service.ReportService;
 import org.example.backend.foodpick.domain.user.dto.*;
@@ -32,7 +36,7 @@ public class UserAdminService {
     private final JwtTokenValidator jwtTokenValidator;
     private final UserQueryRepository userQueryRepository;
     private final RedisService redisService;
-    private final ReportRepository reportRepository;
+    private final AlarmService alarmService;
 
     public ResponseEntity<ApiResponse<List<UserResponse>>> getUserAll(String token){
         Long myId = jwtTokenValidator.getUserId(token);
@@ -88,6 +92,16 @@ public class UserAdminService {
         }
 
         userRepository.save(user);
+
+        SendAlarmRequest alarmRequest = new SendAlarmRequest(
+                user.getId(),
+                AlarmType.WARNING_ADDED,
+                AlarmTargetType.USER,
+                user.getId(),
+                "경고 " + addWarning + "회가 부여되었습니다. (총 " + newWarning + "회)"
+        );
+
+        alarmService.sendAlarm(adminId, alarmRequest);
 
         return ResponseEntity.ok(new ApiResponse<>(200, "해당 유저의 경고 누적 및 제재 처리가 완료되었습니다.", null));
     }

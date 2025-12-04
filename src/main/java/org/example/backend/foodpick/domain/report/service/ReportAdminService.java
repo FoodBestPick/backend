@@ -1,6 +1,10 @@
 package org.example.backend.foodpick.domain.report.service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.backend.foodpick.domain.alarm.dto.SendAlarmRequest;
+import org.example.backend.foodpick.domain.alarm.model.AlarmTargetType;
+import org.example.backend.foodpick.domain.alarm.model.AlarmType;
+import org.example.backend.foodpick.domain.alarm.service.AlarmService;
 import org.example.backend.foodpick.domain.report.dto.ReportListResponse;
 import org.example.backend.foodpick.domain.report.dto.ReportPageResponse;
 import org.example.backend.foodpick.domain.report.model.ReportEntity;
@@ -35,6 +39,7 @@ public class ReportAdminService {
     private final ReportRepository reportRepository;
     private final UserRepository userRepository;
     private final JwtTokenValidator jwtTokenValidator;
+    private final AlarmService alarmService;
 
     public ResponseEntity<ApiResponse<ReportPageResponse>> getAllReports(
             String token,
@@ -155,6 +160,16 @@ public class ReportAdminService {
         userRepository.save(user);
         report.update(admin);
         reportRepository.save(report);
+
+        SendAlarmRequest alarmRequest = new SendAlarmRequest(
+                user.getId(),
+                AlarmType.WARNING_ADDED,
+                AlarmTargetType.USER,
+                user.getId(),
+                "경고 " + addWarning + "회가 부여되었습니다. (총 " + newWarning + "회)"
+        );
+
+        alarmService.sendAlarm(adminId, alarmRequest);
 
         return ResponseEntity.ok(
                 new ApiResponse<>(200, "신고 승인 및 경고 처리가 완료되었습니다.", null)
