@@ -230,6 +230,7 @@ public class RestaurantService {
             }
 
             for (String catName : categoryList) {
+                if (catName == null || catName.isBlank()) continue;
                 Food food = foodRepository.findByName(catName)
                         .orElseGet(() -> foodRepository.save(Food.builder().name(catName).build()));
                 foodBridgeRepository.save(FoodBridge.builder().restaurant(r).food(food).build());
