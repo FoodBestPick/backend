@@ -42,7 +42,7 @@ public enum ErrorException {
     INVALID_REFRESH_TOKEN(401, "유효하지 않은 리프레시 토큰입니다."),
 
     AUTHOR_ONLY(403, "해당 공고의 기획자만 조회 가능합니다."),
-    CAN_NOT_DELETE_ALARM(403, "해당 알람을 삭제할 수 없습니다."),
+    CAN_NOT_DELETE_ALARM(403, "본인만 알람을 삭제할 수 있습니다."),
     FORBIDDEN(403, "접근이 금지되었습니다."),
     FAIL_PROJECT_UPDATE(403, "작성자만 수정 가능합니다."),
     NOT_COMMENT_OWNER(403, "작성자 및 프로젝트 작성자만 댓글을 삭제할 수 있습니다."),
