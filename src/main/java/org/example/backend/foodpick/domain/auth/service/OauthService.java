@@ -16,7 +16,7 @@ import org.example.backend.foodpick.global.exception.ErrorException;
 import org.example.backend.foodpick.global.jwt.JwtTokenProvider;
 import org.example.backend.foodpick.global.jwt.JwtTokenValidator;
 import org.example.backend.foodpick.global.util.ApiResponse;
-import org.example.backend.foodpick.infra.redis.service.RedisService;
+import org.example.backend.foodpick.infra.redis.service.RedisDashboardService;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -30,7 +30,7 @@ public class OauthService {
     private final AuthRepository authRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtTokenValidator jwtTokenValidator;
-    private final RedisService redisService;
+    private final RedisDashboardService redisDashboardService;
 
     public ResponseEntity<ApiResponse<TokenResponse>> signInKakao(TokenRequest request,
                                                                   HttpServletResponse response) {
@@ -54,8 +54,8 @@ public class OauthService {
 
         authRepository.save(user);
 
-        redisService.recordLogin(user.getId(), user.getRole());
-        redisService.recordVisit(user.getId(), user.getRole());
+        redisDashboardService.recordLogin(user.getId(), user.getRole());
+        redisDashboardService.recordVisit(user.getId(), user.getRole());
 
         String accessToken = jwtTokenProvider.generateToken(user.getId());
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
@@ -106,8 +106,8 @@ public class OauthService {
 
         authRepository.save(user);
 
-        redisService.recordLogin(user.getId(), user.getRole());
-        redisService.recordVisit(user.getId(), user.getRole());
+        redisDashboardService.recordLogin(user.getId(), user.getRole());
+        redisDashboardService.recordVisit(user.getId(), user.getRole());
 
         String accessToken = jwtTokenProvider.generateToken(user.getId());
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
@@ -158,8 +158,8 @@ public class OauthService {
 
         authRepository.save(user);
 
-        redisService.recordLogin(user.getId(), user.getRole());
-        redisService.recordVisit(user.getId(), user.getRole());
+        redisDashboardService.recordLogin(user.getId(), user.getRole());
+        redisDashboardService.recordVisit(user.getId(), user.getRole());
 
         String accessToken = jwtTokenProvider.generateToken(user.getId());
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());

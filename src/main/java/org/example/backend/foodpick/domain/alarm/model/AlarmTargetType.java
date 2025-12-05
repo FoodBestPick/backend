@@ -5,4 +5,5 @@ public enum AlarmTargetType {
     INQUIRY,
     USER,
     REPORT,
+    CHAT_ROOM
 }

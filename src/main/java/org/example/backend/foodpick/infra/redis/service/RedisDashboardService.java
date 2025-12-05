@@ -1,7 +1,6 @@
 package org.example.backend.foodpick.infra.redis.service;
 
 import lombok.RequiredArgsConstructor;
-import org.example.backend.foodpick.domain.user.model.UserEntity;
 import org.example.backend.foodpick.domain.user.model.UserRole;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -16,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
-public class RedisService {
+public class RedisDashboardService {
 
     private final RedisTemplate<String, String> redisTemplate;
 

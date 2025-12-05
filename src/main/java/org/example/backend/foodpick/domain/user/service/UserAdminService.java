@@ -2,13 +2,10 @@ package org.example.backend.foodpick.domain.user.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.coyote.Response;
 import org.example.backend.foodpick.domain.alarm.dto.SendAlarmRequest;
 import org.example.backend.foodpick.domain.alarm.model.AlarmTargetType;
 import org.example.backend.foodpick.domain.alarm.model.AlarmType;
 import org.example.backend.foodpick.domain.alarm.service.AlarmService;
-import org.example.backend.foodpick.domain.report.repository.ReportRepository;
-import org.example.backend.foodpick.domain.report.service.ReportService;
 import org.example.backend.foodpick.domain.user.dto.*;
 import org.example.backend.foodpick.domain.user.model.UserEntity;
 import org.example.backend.foodpick.domain.user.model.UserRole;
@@ -19,7 +16,7 @@ import org.example.backend.foodpick.global.exception.CustomException;
 import org.example.backend.foodpick.global.exception.ErrorException;
 import org.example.backend.foodpick.global.jwt.JwtTokenValidator;
 import org.example.backend.foodpick.global.util.ApiResponse;
-import org.example.backend.foodpick.infra.redis.service.RedisService;
+import org.example.backend.foodpick.infra.redis.service.RedisDashboardService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -35,7 +32,7 @@ public class UserAdminService {
     private final UserRepository userRepository;
     private final JwtTokenValidator jwtTokenValidator;
     private final UserQueryRepository userQueryRepository;
-    private final RedisService redisService;
+    private final RedisDashboardService redisDashboardService;
     private final AlarmService alarmService;
 
     public ResponseEntity<ApiResponse<List<UserResponse>>> getUserAll(String token){
@@ -186,7 +183,7 @@ public class UserAdminService {
         LocalDate weekStart = today.with(DayOfWeek.MONDAY);
         LocalDate weekEnd = today.with(DayOfWeek.SUNDAY);
 
-        List<Integer> weekTimeSeries = redisService.getTimeSeries(weekStart, weekEnd);
+        List<Integer> weekTimeSeries = redisDashboardService.getTimeSeries(weekStart, weekEnd);
 
         int[] allUserData = allUserDataList.stream().mapToInt(Long::intValue).toArray();
         int[] weekUserData = weekTimeSeries.stream().mapToInt(Integer::intValue).toArray();
@@ -238,11 +235,11 @@ public class UserAdminService {
 
         LocalDate today = LocalDate.now();
 
-        long todayVisitors = redisService.getTodayVisitors();
+        long todayVisitors = redisDashboardService.getTodayVisitors();
         long todayJoins = userRepository.countByCreatedAtBetween(
                 today.atStartOfDay(), today.atTime(23,59,59)
         );
-        List<Integer> todaySeries = redisService.getTimeSeries(today, today);
+        List<Integer> todaySeries = redisDashboardService.getTimeSeries(today, today);
 
         StatsPeriodDetail todayStats =
                 StatsPeriodDetail.ofUserStats(todayVisitors, todayJoins, todaySeries);
@@ -250,11 +247,11 @@ public class UserAdminService {
         LocalDate weekStart = today.with(DayOfWeek.MONDAY);
         LocalDate weekEnd = today.with(DayOfWeek.SUNDAY);
 
-        long weekVisitors = redisService.getWeekVisitors();
+        long weekVisitors = redisDashboardService.getWeekVisitors();
         long weekJoins = userRepository.countByCreatedAtBetween(
                 weekStart.atStartOfDay(), weekEnd.atTime(23,59,59)
         );
-        List<Integer> weekSeries = redisService.getTimeSeries(weekStart, weekEnd);
+        List<Integer> weekSeries = redisDashboardService.getTimeSeries(weekStart, weekEnd);
 
         StatsPeriodDetail weekStats =
                 StatsPeriodDetail.ofUserStats(weekVisitors, weekJoins, weekSeries);
@@ -262,11 +259,11 @@ public class UserAdminService {
         LocalDate monthStart = today.withDayOfMonth(1);
         LocalDate monthEnd = today.withDayOfMonth(today.lengthOfMonth());
 
-        long monthVisitors = redisService.getMonthVisitors();
+        long monthVisitors = redisDashboardService.getMonthVisitors();
         long monthJoins = userRepository.countByCreatedAtBetween(
                 monthStart.atStartOfDay(), monthEnd.atTime(23,59,59)
         );
-        List<Integer> monthSeries = redisService.getTimeSeries(monthStart, monthEnd);
+        List<Integer> monthSeries = redisDashboardService.getTimeSeries(monthStart, monthEnd);
 
         StatsPeriodDetail monthStats =
                 StatsPeriodDetail.ofUserStats(monthVisitors, monthJoins, monthSeries);
@@ -275,11 +272,11 @@ public class UserAdminService {
         StatsPeriodDetail customStats;
 
         if (startDate != null && endDate != null) {
-            long customVisitors = redisService.getCustomVisitors(startDate, endDate);
+            long customVisitors = redisDashboardService.getCustomVisitors(startDate, endDate);
             long customJoins = userRepository.countByCreatedAtBetween(
                     startDate.atStartOfDay(), endDate.atTime(23,59,59)
             );
-            List<Integer> customSeries = redisService.getTimeSeries(startDate, endDate);
+            List<Integer> customSeries = redisDashboardService.getTimeSeries(startDate, endDate);
 
             customStats = StatsPeriodDetail.ofUserStats(customVisitors, customJoins, customSeries);
 
