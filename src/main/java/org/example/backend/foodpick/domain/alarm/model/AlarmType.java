@@ -7,5 +7,6 @@ public enum AlarmType {
     REVIEW_COMMENT,         // 누가 내 리뷰에 댓글
     INQUIRY_ANSWER,         // / 내 문의글에 답변
     WARNING_ADDED,          // 경고 횟수 추가될 때
+    MATCH_SUCCESS,          // 매칭 성공했을 때
     SYSTEM                  // 시스템 공지 또는 기타
 }

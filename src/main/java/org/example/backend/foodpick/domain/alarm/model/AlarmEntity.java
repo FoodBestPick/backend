@@ -49,7 +49,6 @@ public class AlarmEntity {
 
     public void markAsRead() {
         this.isRead = true;
-        this.updatedAt = LocalDateTime.now();
     }
 
     @PrePersist

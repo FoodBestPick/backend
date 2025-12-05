@@ -1,6 +1,5 @@
 package org.example.backend.foodpick.domain.auth.service;
 
-import io.jsonwebtoken.Jwts;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -16,15 +15,13 @@ import org.example.backend.foodpick.global.exception.ErrorException;
 import org.example.backend.foodpick.global.jwt.JwtTokenProvider;
 import org.example.backend.foodpick.global.jwt.JwtTokenValidator;
 import org.example.backend.foodpick.global.util.ApiResponse;
-import org.example.backend.foodpick.infra.redis.service.RedisService;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.example.backend.foodpick.infra.redis.service.RedisDashboardService;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -35,7 +32,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtTokenValidator jwtTokenValidator;
-    private final RedisService redisService;
+    private final RedisDashboardService redisDashboardService;
 
     private static final String EMAIL_REGEX =
             "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}$";
@@ -115,8 +112,8 @@ public class AuthService {
             throw new CustomException(ErrorException.INVALID_PASSWORD);
         }
 
-        redisService.recordLogin(user.getId(), user.getRole());
-        redisService.recordVisit(user.getId(), user.getRole());
+        redisDashboardService.recordLogin(user.getId(), user.getRole());
+        redisDashboardService.recordVisit(user.getId(), user.getRole());
 
         String accessToken = jwtTokenProvider.generateToken(user.getId());
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
