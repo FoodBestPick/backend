@@ -27,6 +27,8 @@ public enum ErrorException {
     ALREADY_IMPOSED(400, "이미 제재된 신고입니다."),
     INVALID_REPORT_TYPE(400, "해당 신고는 유저를 대상으로 하지 않습니다."),
     CHAT_ROOM_NOT_FOUND(400, "채팅방을 찾을 수 없습니다."),
+    RESTAURANT_NOT_FOUND(400, "맛집을 찾을 수 없습니다."),
+    CHAT_MESSAGE_NOT_FOUND(400, "채팅 메시지를 찾을 수 없습니다."),
     INVALID_WARNING_RANGE(400, "경고 횟수 범위를 벗어났습니다."),
     INVALID_BAN_DURATION(400, "정지 기간 범위를 벗어났습니다."),
     INVALID_ROLE(400, "존재하지 않는 권한입니다."),

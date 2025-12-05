@@ -5,6 +5,7 @@ import org.example.backend.foodpick.domain.alarm.dto.SendAlarmRequest;
 import org.example.backend.foodpick.domain.alarm.model.AlarmTargetType;
 import org.example.backend.foodpick.domain.alarm.model.AlarmType;
 import org.example.backend.foodpick.domain.alarm.service.AlarmService;
+import org.example.backend.foodpick.domain.chat.repository.ChatMessageRepository;
 import org.example.backend.foodpick.domain.report.dto.SendReportRequest;
 import org.example.backend.foodpick.domain.report.model.ReportEntity;
 import org.example.backend.foodpick.domain.report.repository.ReportRepository;
@@ -30,6 +31,7 @@ public class ReportService {
     private final UserRepository userRepository;
     private final RestaurantRepository restaurantRepository;
     private final AlarmService alarmService;
+    private final ChatMessageRepository chatRepository;
 
     public ResponseEntity<ApiResponse<String>> sendReport(String token, SendReportRequest request){
 
@@ -55,18 +57,15 @@ public class ReportService {
                  */
             case RESTAURANT:
                 if (!restaurantRepository.existsById(request.getTargetId())) {
-                    throw new CustomException(ErrorException.USER_NOT_FOUND);
+                    throw new CustomException(ErrorException.RESTAURANT_NOT_FOUND);
                 }
                 break;
 
-                /*
-            case CHAT:
+            case CHAT_MESSAGE:
                 if (!chatRepository.existsById(request.getTargetId())) {
-                    throw new CustomException(ErrorException.TARGET_NOT_FOUND);
+                    throw new CustomException(ErrorException.CHAT_MESSAGE_NOT_FOUND);
                 }
                 break;
-
-                */
         }
 
         ReportEntity report = ReportEntity.create(reporter, request);
