@@ -84,9 +84,12 @@ public class RestaurantController {
             @RequestParam(value = "category", required = false) String category,
             @RequestParam(value = "tags", required = false) List<String> tags,
             @RequestParam(value = "minPrice", required = false) Integer minPrice,
-            @RequestParam(value = "maxPrice", required = false) Integer maxPrice
+            @RequestParam(value = "maxPrice", required = false) Integer maxPrice,
+            @RequestParam(value = "minRating", required = false) Double minRating,
+            @RequestParam(value = "openNow", required = false) Boolean openNow,
+            @RequestParam(value = "sort", required = false, defaultValue = "rating") String sort
     ) {
-        return restaurantService.searchRestaurants(keyword, category, tags, minPrice, maxPrice);
+        return restaurantService.searchRestaurants(keyword, category, tags, minPrice, maxPrice, minRating, openNow, sort);
     }
 
     /**

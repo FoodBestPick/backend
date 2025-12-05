@@ -1,5 +1,6 @@
 package org.example.backend.foodpick.domain.review.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -23,9 +24,16 @@ public class ReviewResponse {
     private Double rating;
     private List<String> images;
     private String createdAt;
+
+    @JsonProperty("isMine")
     private boolean isMine;
 
-    public static ReviewResponse from(Review review, Long currentUserId) {
+    @JsonProperty("isLiked")
+    private boolean isLiked;
+
+    private long likeCount;
+
+    public static ReviewResponse from(Review review, Long currentUserId, boolean isLiked, long likeCount) {
         return ReviewResponse.builder()
                 .id(review.getId())
                 .userId(review.getUser().getId())
@@ -37,6 +45,8 @@ public class ReviewResponse {
                 .images(review.getImages())
                 .createdAt(review.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")))
                 .isMine(review.getUser().getId().equals(currentUserId))
+                .isLiked(isLiked)
+                .likeCount(likeCount)
                 .build();
     }
 }

@@ -42,7 +42,7 @@ public class ReviewController {
 
     @PutMapping(value = "/{id}", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity<ApiResponse<ReviewResponse>> updateReview(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @RequestPart(value = "data") String data,
             @RequestPart(value = "file", required = false) List<MultipartFile> files,
             @RequestHeader("Authorization") String token) {
@@ -56,14 +56,14 @@ public class ReviewController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteReview(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @RequestHeader("Authorization") String token) {
         return reviewService.deleteReview(id, token);
     }
 
     @GetMapping("/restaurant/{restaurantId}")
     public ResponseEntity<ApiResponse<Page<ReviewResponse>>> getRestaurantReviews(
-            @PathVariable Long restaurantId,
+            @PathVariable("restaurantId") Long restaurantId,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
             @RequestHeader(value = "Authorization", required = false) String token) {
         return reviewService.getRestaurantReviews(restaurantId, pageable, token);

@@ -1,6 +1,7 @@
 package org.example.backend.foodpick.domain.review.service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.backend.foodpick.domain.like.repository.LikeRepository;
 import org.example.backend.foodpick.domain.restaurant.model.Restaurant;
 import org.example.backend.foodpick.domain.restaurant.repository.RestaurantRepository;
 import org.example.backend.foodpick.domain.review.dto.ReviewRequest;
@@ -31,6 +32,7 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final RestaurantRepository restaurantRepository;
     private final UserRepository userRepository;
+    private final LikeRepository likeRepository;
     private final S3Service s3Service;
     private final JwtTokenValidator jwtTokenValidator;
 
@@ -62,7 +64,7 @@ public class ReviewService {
         
         // 식당 평점/리뷰수 업데이트 로직이 필요하다면 여기에 추가 (또는 별도 배치/이벤트)
 
-        return ResponseEntity.ok(ApiResponse.success(ReviewResponse.from(savedReview, user.getId())));
+        return ResponseEntity.ok(ApiResponse.success(ReviewResponse.from(savedReview, user.getId(), false, 0)));
     }
 
     @Transactional
@@ -86,7 +88,10 @@ public class ReviewService {
 
         review.update(request.getContent(), request.getRating(), imageUrls);
 
-        return ResponseEntity.ok(ApiResponse.success(ReviewResponse.from(review, review.getUser().getId())));
+        boolean isLiked = likeRepository.existsByUserAndRestaurantReview(userId, review.getId());
+        long likeCount = likeRepository.countByRestaurantReview(review.getId());
+
+        return ResponseEntity.ok(ApiResponse.success(ReviewResponse.from(review, review.getUser().getId(), isLiked, likeCount)));
     }
 
     @Transactional
@@ -116,7 +121,11 @@ public class ReviewService {
         Long finalCurrentUserId = currentUserId;
 
         Page<Review> reviews = reviewRepository.findAllByRestaurant_Id(restaurantId, pageable);
-        Page<ReviewResponse> responses = reviews.map(r -> ReviewResponse.from(r, finalCurrentUserId));
+        Page<ReviewResponse> responses = reviews.map(r -> {
+            boolean isLiked = (finalCurrentUserId != -1L) && likeRepository.existsByUserAndRestaurantReview(finalCurrentUserId, r.getId());
+            long likeCount = likeRepository.countByRestaurantReview(r.getId());
+            return ReviewResponse.from(r, finalCurrentUserId, isLiked, likeCount);
+        });
         
         return ResponseEntity.ok(ApiResponse.success(responses));
     }

@@ -17,14 +17,14 @@ public class RestaurantLikeController {
 
     @PostMapping("/{restaurantId}")
     public ResponseEntity<ApiResponse<Void>> toggleLike(
-            @PathVariable Long restaurantId,
+            @PathVariable("restaurantId") Long restaurantId,
             @RequestHeader("Authorization") String token) {
         return likeService.toggleLike(restaurantId, token);
     }
     
     @DeleteMapping("/{restaurantId}")
     public ResponseEntity<ApiResponse<Void>> unlike(
-            @PathVariable Long restaurantId,
+            @PathVariable("restaurantId") Long restaurantId,
             @RequestHeader("Authorization") String token) {
         // toggleLike handles both add and remove, but if frontend calls DELETE explicitly:
         return likeService.toggleLike(restaurantId, token);
