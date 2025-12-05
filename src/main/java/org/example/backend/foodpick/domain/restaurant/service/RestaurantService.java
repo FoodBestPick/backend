@@ -120,8 +120,20 @@ public class RestaurantService {
             }
 
             // 5. 카테고리 저장
-            if (request.getCategories() != null) {
-                for (String categoryName : request.getCategories()) {
+            if (request.getCategories() != null && !request.getCategories().isBlank()) {
+                List<String> categoryList = new ArrayList<>();
+                try {
+                    String catJson = request.getCategories().trim();
+                    if (catJson.startsWith("[")) {
+                        categoryList = objectMapper.readValue(catJson, new TypeReference<List<String>>() {});
+                    } else {
+                        categoryList.add(catJson);
+                    }
+                } catch (Exception e) {
+                    categoryList.add(request.getCategories());
+                }
+
+                for (String categoryName : categoryList) {
                     if (categoryName == null || categoryName.isBlank()) continue;
                     Food food = foodRepository.findByName(categoryName)
                             .orElseGet(() -> foodRepository.save(Food.builder().name(categoryName).build()));
@@ -203,9 +215,22 @@ public class RestaurantService {
         }
 
         // 카테고리 업데이트
-        if (req.getCategories() != null) {
+        if (req.getCategories() != null && !req.getCategories().isBlank()) {
             foodBridgeRepository.deleteAllByRestaurant_Id(r.getId());
-            for (String catName : req.getCategories()) {
+            List<String> categoryList = new ArrayList<>();
+            try {
+                String catJson = req.getCategories().trim();
+                if (catJson.startsWith("[")) {
+                    categoryList = objectMapper.readValue(catJson, new TypeReference<List<String>>() {});
+                } else {
+                    categoryList.add(catJson);
+                }
+            } catch (Exception e) {
+                categoryList.add(req.getCategories());
+            }
+
+            for (String catName : categoryList) {
+                if (catName == null || catName.isBlank()) continue;
                 Food food = foodRepository.findByName(catName)
                         .orElseGet(() -> foodRepository.save(Food.builder().name(catName).build()));
                 foodBridgeRepository.save(FoodBridge.builder().restaurant(r).food(food).build());
@@ -276,10 +301,11 @@ public class RestaurantService {
         return ResponseEntity.ok(ApiResponse.success(restaurantRepository.findByNameContaining(name, pageable).map(RestaurantResponse::from)));
     }
 
-    // ✅ [통합 검색] 키워드, 카테고리, 태그, 가격 필터
+    // ✅ [통합 검색] 키워드, 카테고리, 태그, 가격 필터, 정렬, 평점, 영업중
     @Transactional(readOnly = true)
     public ResponseEntity<ApiResponse<List<RestaurantResponse>>> searchRestaurants(
-            String keyword, String category, List<String> tags, Integer minPrice, Integer maxPrice) {
+            String keyword, String category, List<String> tags, Integer minPrice, Integer maxPrice,
+            Double minRating, Boolean openNow, String sort) {
         
         List<Restaurant> all = restaurantRepository.findAll();
         
@@ -297,9 +323,53 @@ public class RestaurantService {
                     return (minPrice == null || p >= minPrice) && (maxPrice == null || p <= maxPrice);
                 });
             })
+            .filter(r -> minRating == null || (r.getAverageRating() != null && r.getAverageRating() >= minRating))
+            .filter(r -> (openNow == null || !openNow) || isOpenNow(r))
             .map(RestaurantResponse::from)
+            .sorted((r1, r2) -> {
+                if ("review".equals(sort)) {
+                    return Long.compare(r2.getReviewCount(), r1.getReviewCount()); // 리뷰 많은 순
+                } else {
+                    return Double.compare(r2.getAverageRating(), r1.getAverageRating()); // 평점 높은 순 (기본)
+                }
+            })
             .collect(Collectors.toList());
 
         return ResponseEntity.ok(ApiResponse.success(filtered));
+    }
+
+
+
+    private boolean isOpenNow(Restaurant r) {
+        List<RestaurantTime> times = timeRepository.findAllByRestaurant_Id(r.getId());
+        if (times.isEmpty()) return false;
+
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        java.time.DayOfWeek dayOfWeek = now.getDayOfWeek();
+        String koreanDay = dayOfWeek.getDisplayName(java.time.format.TextStyle.NARROW, java.util.Locale.KOREAN); // 월, 화, 수...
+        String koreanDayFull = dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.KOREAN); // 월요일, 화요일...
+
+        // 오늘 요일에 해당하는 시간 찾기
+        RestaurantTime todayTime = times.stream()
+                .filter(t -> t.getWeek().contains(koreanDay) || t.getWeek().contains(koreanDayFull))
+                .findFirst()
+                .orElse(null);
+
+        if (todayTime == null) return false;
+
+        try {
+            java.time.LocalTime currentTime = now.toLocalTime();
+            java.time.LocalTime start = java.time.LocalTime.parse(todayTime.getStartTime()); // HH:mm
+            java.time.LocalTime end = java.time.LocalTime.parse(todayTime.getEndTime());
+
+            // 종료 시간이 시작 시간보다 빠르면 (예: 18:00 ~ 02:00) 다음날로 넘어가는 경우 처리
+            if (end.isBefore(start)) {
+                return currentTime.isAfter(start) || currentTime.isBefore(end);
+            } else {
+                return currentTime.isAfter(start) && currentTime.isBefore(end);
+            }
+        } catch (Exception e) {
+            return false; // 파싱 에러 시 영업 안함으로 처리
+        }
     }
 }

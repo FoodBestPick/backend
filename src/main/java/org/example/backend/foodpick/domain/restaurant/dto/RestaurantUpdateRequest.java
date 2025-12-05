@@ -11,8 +11,8 @@ public class RestaurantUpdateRequest {
     private Double restaurant_latitude;
     private Double restaurant_longitude;
     
-    // ✅ [수정] 단일 String -> List<String>
-    private List<String> categories;
+    // ✅ [수정] 단일 String -> List<String> -> JSON String
+    private String categories;
     
     private String menus;
     private String times;

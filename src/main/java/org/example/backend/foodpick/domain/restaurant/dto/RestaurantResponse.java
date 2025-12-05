@@ -33,6 +33,10 @@ public class RestaurantResponse {
     private List<FoodResponse> categories;
     private List<TimeResponse> times;
 
+    // ✅ [추가] 리뷰 수 및 평점
+    private Long reviewCount;
+    private Double averageRating;
+
     // ✅ [추가] 프론트엔드 호환성 필드 (이게 있어야 화면에 나옴)
     private String description; // introduce의 별칭
     private List<String> images; // pictures의 URL 리스트 버전
@@ -70,6 +74,8 @@ public class RestaurantResponse {
                 .times(restaurant.getTimes().stream()
                         .map(t -> new TimeResponse(t.getId(), t.getWeek(), t.getStartTime(), t.getEndTime(), t.getRestTime()))
                         .collect(Collectors.toList()))
+                .reviewCount(restaurant.getReviewCount() != null ? restaurant.getReviewCount() : 0L)
+                .averageRating(restaurant.getAverageRating() != null ? Math.round(restaurant.getAverageRating() * 10) / 10.0 : 0.0)
                 .build();
     }
 }
