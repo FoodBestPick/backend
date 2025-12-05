@@ -1,5 +1,5 @@
 package org.example.backend.foodpick.domain.report.model;
 
 public enum ReportTargetType   {
-    USER, REVIEW, RESTAURANT, CHAT
+    USER, REVIEW, RESTAURANT, CHAT_MESSAGE
 }
