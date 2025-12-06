@@ -14,6 +14,7 @@ import org.example.backend.foodpick.global.exception.CustomException;
 import org.example.backend.foodpick.global.exception.ErrorException;
 import org.example.backend.foodpick.global.jwt.JwtTokenValidator;
 import org.example.backend.foodpick.global.util.ApiResponse;
+import org.example.backend.foodpick.infra.redis.service.RedisDashboardService;
 import org.example.backend.foodpick.infra.s3.service.S3Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -35,6 +37,7 @@ public class ReviewService {
     private final LikeRepository likeRepository;
     private final S3Service s3Service;
     private final JwtTokenValidator jwtTokenValidator;
+    private final RedisDashboardService redisDashboardService;
 
     @Transactional
     public ResponseEntity<ApiResponse<ReviewResponse>> createReview(ReviewRequest request, List<MultipartFile> files, String token) {
@@ -63,6 +66,8 @@ public class ReviewService {
         Review savedReview = reviewRepository.save(review);
         
         // 식당 평점/리뷰수 업데이트 로직이 필요하다면 여기에 추가 (또는 별도 배치/이벤트)
+
+        redisDashboardService.recordNewReview(LocalDate.now());
 
         return ResponseEntity.ok(ApiResponse.success(ReviewResponse.from(savedReview, user.getId(), false, 0)));
     }
