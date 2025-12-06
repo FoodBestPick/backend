@@ -11,5 +11,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class PieItem {
     private String name;
-    private int population;
+    private Long population;
 }
