@@ -28,7 +28,6 @@ public class StatsPeriodDetail {
     private Map<String, Integer> categories;
     private List<Integer> ratingDistribution;
     private List<TopSearch> topSearches;
-    private List<PieItem> pie;
 
     public static StatsPeriodDetail ofUserStats(
             long visitors, long prevVisitors,
@@ -38,8 +37,7 @@ public class StatsPeriodDetail {
             List<Integer> timeSeries,
             Map<String, Integer> categories,
             List<Integer> ratingDistribution,
-            List<TopSearch> topSearches,
-            List<PieItem> pie
+            List<TopSearch> topSearches
     ) {
         return StatsPeriodDetail.builder()
                 .visitors(visitors)
@@ -56,7 +54,6 @@ public class StatsPeriodDetail {
                 .categories(categories)
                 .ratingDistribution(ratingDistribution)
                 .topSearches(topSearches)
-                .pie(pie)
                 .build();
     }
 

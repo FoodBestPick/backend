@@ -6,6 +6,7 @@ import org.example.backend.foodpick.domain.alarm.dto.SendAlarmRequest;
 import org.example.backend.foodpick.domain.alarm.model.AlarmTargetType;
 import org.example.backend.foodpick.domain.alarm.model.AlarmType;
 import org.example.backend.foodpick.domain.alarm.service.AlarmService;
+import org.example.backend.foodpick.domain.restaurant.repository.RestaurantSearchRepository;
 import org.example.backend.foodpick.domain.review.repository.ReviewQueryRepository;
 import org.example.backend.foodpick.domain.restaurant.repository.RestaurantRepository;
 import org.example.backend.foodpick.domain.review.repository.ReviewRepository;
@@ -41,6 +42,7 @@ public class UserAdminService {
     private final UserQueryRepository userQueryRepository;
     private final RestaurantRepository restaurantRepository;
     private final ReviewRepository reviewRepository;
+    private final RestaurantSearchRepository restaurantSearchRepository;
     private final RedisDashboardService redisDashboardService;
     private final AlarmService alarmService;
 
@@ -314,8 +316,8 @@ public class UserAdminService {
                         today.atTime(23,59,59)
                 );
 
-        List<TopSearch> topSearches = buildTopSearches();
-        List<PieItem> pieData = buildTrafficPie();
+        List<TopSearch> topSearches =
+                buildTopSearches(today.atStartOfDay(), today.atTime(23,59,59));
 
         return StatsPeriodDetail.ofUserStats(
                 visitors, prevVisitors,
@@ -323,7 +325,7 @@ public class UserAdminService {
                 restaurants, prevRestaurants,
                 reviews, prevReviews,
                 series,
-                categories, ratingDistribution, topSearches, pieData
+                categories, ratingDistribution, topSearches
         );
     }
 
@@ -366,8 +368,8 @@ public class UserAdminService {
                         weekEnd.atTime(23,59,59)
                 );
 
-        List<TopSearch> topSearches = buildTopSearches();
-        List<PieItem> pieData = buildTrafficPie();
+        List<TopSearch> topSearches =
+                buildTopSearches(weekStart.atStartOfDay(), weekEnd.atTime(23,59,59));
 
         return StatsPeriodDetail.ofUserStats(
                 visitors, prevVisitors,
@@ -375,7 +377,7 @@ public class UserAdminService {
                 restaurants, prevRestaurants,
                 reviews, prevReviews,
                 series,
-                categories, ratingDistribution, topSearches, pieData
+                categories, ratingDistribution, topSearches
         );
     }
 
@@ -418,8 +420,9 @@ public class UserAdminService {
                         monthEnd.atTime(23,59,59)
                 );
 
-        List<TopSearch> topSearches = buildTopSearches();
-        List<PieItem> pieData = buildTrafficPie();
+        List<TopSearch> topSearches =
+                buildTopSearches(monthStart.atStartOfDay(), monthEnd.atTime(23,59,59));
+
 
         return StatsPeriodDetail.ofUserStats(
                 visitors, prevVisitors,
@@ -427,7 +430,7 @@ public class UserAdminService {
                 restaurants, prevRestaurants,
                 reviews, prevReviews,
                 series,
-                categories, ratingDistribution, topSearches, pieData
+                categories, ratingDistribution, topSearches
         );
     }
 
@@ -442,8 +445,7 @@ public class UserAdminService {
                     List.of(),
                     Map.of(),
                     List.of(),
-                    buildTopSearches(),
-                    buildTrafficPie()
+                    List.of()
             );
         }
 
@@ -483,8 +485,9 @@ public class UserAdminService {
                         endDate.atTime(23,59,59)
                 );
 
-        List<TopSearch> topSearches = buildTopSearches();
-        List<PieItem> pieData = buildTrafficPie();
+        List<TopSearch> topSearches =
+                buildTopSearches(startDate.atStartOfDay(), endDate.atTime(23,59,59));
+
 
         return StatsPeriodDetail.ofUserStats(
                 visitors, prevVisitors,
@@ -492,7 +495,7 @@ public class UserAdminService {
                 restaurants, prevRestaurants,
                 reviews, prevReviews,
                 series,
-                categories, ratingDistribution, topSearches, pieData
+                categories, ratingDistribution, topSearches
         );
     }
 
@@ -551,23 +554,18 @@ public class UserAdminService {
         );
     }
 
-    private List<TopSearch> buildTopSearches() {
-        return List.of(
-                new TopSearch("마라탕", 1250),
-                new TopSearch("강남역 맛집", 980),
-                new TopSearch("성수동 카페", 870),
-                new TopSearch("홍대 파스타", 760),
-                new TopSearch("잠실 롯데월드몰", 650)
-        );
-    }
-
-    private List<PieItem> buildTrafficPie() {
-        return List.of(
-                new PieItem("검색", 40L),
-                new PieItem("SNS", 25L),
-                new PieItem("광고", 20L),
-                new PieItem("기타", 15L)
-        );
+    private List<TopSearch> buildTopSearches(
+            LocalDateTime start,
+            LocalDateTime end
+    ) {
+        return restaurantSearchRepository.findTopKeywordsBetween(start, end)
+                .stream()
+                .limit(5)
+                .map(row -> new TopSearch(
+                        (String) row[0],
+                        ((Number) row[1]).intValue()
+                ))
+                .toList();
     }
 
     private LocalDateTime calculateBanDuration(int warning) {
