@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.example.backend.foodpick.domain.restaurant.model.Restaurant;
 import org.example.backend.foodpick.domain.user.model.UserEntity;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -23,4 +24,12 @@ public class RestaurantLike {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "RESTAURANT_ID")
     private Restaurant restaurant;
+
+    @Column(name = "CREATED_DATE")
+    private LocalDateTime createdDate;
+
+    @PrePersist
+    public void prePersist() {
+        this.createdDate = LocalDateTime.now();
+    }
 }

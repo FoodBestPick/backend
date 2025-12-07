@@ -11,6 +11,9 @@ import org.example.backend.foodpick.global.exception.CustomException;
 import org.example.backend.foodpick.global.exception.ErrorException;
 import org.example.backend.foodpick.global.jwt.JwtTokenValidator;
 import org.example.backend.foodpick.global.util.ApiResponse;
+import org.example.backend.foodpick.domain.restaurant.dto.RestaurantResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,13 +28,23 @@ public class RestaurantLikeService {
     private final UserRepository userRepository;
     private final JwtTokenValidator jwtTokenValidator;
 
+    @Transactional(readOnly = true)
+    public ResponseEntity<ApiResponse<Page<RestaurantResponse>>> getMyLikedRestaurants(Pageable pageable, String token) {
+        Long userId = jwtTokenValidator.getUserId(token);
+        Page<RestaurantLike> likes = likeRepository.findAllByUser_Id(userId, pageable);
+
+        Page<RestaurantResponse> responses = likes.map(like -> RestaurantResponse.from(like.getRestaurant()));
+
+        return ResponseEntity.ok(ApiResponse.success(responses));
+    }
+
     public ResponseEntity<ApiResponse<Void>> toggleLike(Long restaurantId, String token) {
         Long userId = jwtTokenValidator.getUserId(token);
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorException.USER_NOT_FOUND));
         
-        if (likeRepository.existsByUser_IdAndRestaurant_Id(user.getId(), restaurantId)) {
-            likeRepository.deleteByUser_IdAndRestaurant_Id(user.getId(), restaurantId);
+        if (likeRepository.existsByUserIdAndRestaurantId(user.getId(), restaurantId)) {
+            likeRepository.deleteByUserIdAndRestaurantId(user.getId(), restaurantId);
             return ResponseEntity.ok(ApiResponse.success(null)); // 좋아요 취소
         } else {
             Restaurant restaurant = restaurantRepository.findById(restaurantId)

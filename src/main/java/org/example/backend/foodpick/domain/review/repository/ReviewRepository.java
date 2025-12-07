@@ -9,6 +9,7 @@ import java.util.List;
 
 public interface ReviewRepository extends JpaRepository<Review, Long> {
     Page<Review> findAllByRestaurant_Id(Long restaurantId, Pageable pageable);
+    Page<Review> findAllByUser_Id(Long userId, Pageable pageable);
     List<Review> findAllByRestaurant_Id(Long restaurantId);
     void deleteAllByRestaurant_Id(Long restaurantId);
 }

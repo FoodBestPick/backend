@@ -68,4 +68,11 @@ public class ReviewController {
             @RequestHeader(value = "Authorization", required = false) String token) {
         return reviewService.getRestaurantReviews(restaurantId, pageable, token);
     }
+
+    @GetMapping("/my")
+    public ResponseEntity<ApiResponse<Page<ReviewResponse>>> getMyReviews(
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
+            @RequestHeader("Authorization") String token) {
+        return reviewService.getMyReviews(pageable, token);
+    }
 }

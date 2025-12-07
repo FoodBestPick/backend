@@ -15,6 +15,8 @@ import org.example.backend.foodpick.domain.food.model.Food;
 import org.example.backend.foodpick.domain.food.repository.FoodRepository;
 import org.example.backend.foodpick.domain.food.model.FoodBridge;
 import org.example.backend.foodpick.domain.food.repository.FoodBridgeRepository;
+import org.example.backend.foodpick.domain.like.repository.RestaurantLikeRepository;
+import org.example.backend.foodpick.global.jwt.JwtTokenValidator;
 import org.example.backend.foodpick.global.util.ApiResponse;
 import org.example.backend.foodpick.infra.s3.service.S3Service;
 import org.springframework.data.domain.Page;
@@ -41,6 +43,8 @@ public class RestaurantService {
     private final TagBridgeRepository tagBridgeRepository;
     private final FoodRepository foodRepository;
     private final FoodBridgeRepository foodBridgeRepository;
+    private final RestaurantLikeRepository likeRepository;
+    private final JwtTokenValidator jwtTokenValidator;
     private final S3Service s3Service;
     private final ObjectMapper objectMapper;
 
@@ -290,9 +294,20 @@ public class RestaurantService {
 
     // ✅ 상세 조회
     @Transactional(readOnly = true)
-    public ResponseEntity<ApiResponse<RestaurantResponse>> getRestaurantById(Long id) {
+    public ResponseEntity<ApiResponse<RestaurantResponse>> getRestaurantById(Long id, String token) {
         Restaurant restaurant = restaurantRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("식당을 찾을 수 없습니다."));
-        return ResponseEntity.ok(ApiResponse.success(RestaurantResponse.from(restaurant)));
+        
+        boolean isLiked = false;
+        if (token != null && !token.isEmpty()) {
+            try {
+                Long userId = jwtTokenValidator.getUserId(token);
+                isLiked = likeRepository.existsByUserIdAndRestaurantId(userId, id);
+            } catch (Exception e) {
+                // 토큰 오류 시 무시 (비로그인 상태로 간주)
+            }
+        }
+
+        return ResponseEntity.ok(ApiResponse.success(RestaurantResponse.from(restaurant, isLiked)));
     }
 
     // ✅ 이름 검색
