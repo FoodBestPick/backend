@@ -18,6 +18,7 @@ public class StatsPeriodDetail {
     private long joins;
     private long restaurants;
     private long reviews;
+
     private double visitorRate;
     private double joinRate;
     private double restaurantRate;
@@ -27,42 +28,41 @@ public class StatsPeriodDetail {
     private Map<String, Integer> categories;
     private List<Integer> ratingDistribution;
     private List<TopSearch> topSearches;
-    private List<PieItem> pie;
 
     public static StatsPeriodDetail ofUserStats(
-            long visitors,
-            long joins,
-            List<Integer> timeSeries
+            long visitors, long prevVisitors,
+            long joins, long prevJoins,
+            long restaurants, long prevRestaurants,
+            long reviews, long prevReviews,
+            List<Integer> timeSeries,
+            Map<String, Integer> categories,
+            List<Integer> ratingDistribution,
+            List<TopSearch> topSearches
     ) {
         return StatsPeriodDetail.builder()
                 .visitors(visitors)
                 .joins(joins)
+                .restaurants(restaurants)
+                .reviews(reviews)
 
-                .restaurants(0)
-                .reviews(0)
-                .visitorRate(0)
-                .joinRate(0)
-                .restaurantRate(0)
-                .reviewRate(0)
+                .visitorRate(round1(calcRate(prevVisitors, visitors)))
+                .joinRate(round1(calcRate(prevJoins, joins)))
+                .restaurantRate(round1(calcRate(prevRestaurants, restaurants)))
+                .reviewRate(round1(calcRate(prevReviews, reviews)))
+
                 .timeSeries(timeSeries)
-                .categories(Map.of(
-                        "한식", 50,
-                        "중식", 20,
-                        "일식", 15,
-                        "양식", 10,
-                        "기타", 5
-                ))
-                .ratingDistribution(List.of(10, 20, 30, 40, 50))
-                .topSearches(List.of(
-                        new TopSearch("마라탕", 1000),
-                        new TopSearch("강남역 맛집", 800)
-                ))
-                .pie(List.of(
-                        new PieItem("검색", 40),
-                        new PieItem("SNS", 25),
-                        new PieItem("광고", 20),
-                        new PieItem("기타", 15)
-                ))
+                .categories(categories)
+                .ratingDistribution(ratingDistribution)
+                .topSearches(topSearches)
                 .build();
+    }
+
+    private static double calcRate(long prev, long curr) {
+        if (prev == 0) return curr == 0 ? 0.0 : 100.0;
+        return ((double) (curr - prev) / prev) * 100.0;
+    }
+
+    private static double round1(double v) {
+        return Math.round(v * 10) / 10.0;
     }
 }

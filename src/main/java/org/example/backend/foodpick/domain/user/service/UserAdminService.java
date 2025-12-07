@@ -6,6 +6,10 @@ import org.example.backend.foodpick.domain.alarm.dto.SendAlarmRequest;
 import org.example.backend.foodpick.domain.alarm.model.AlarmTargetType;
 import org.example.backend.foodpick.domain.alarm.model.AlarmType;
 import org.example.backend.foodpick.domain.alarm.service.AlarmService;
+import org.example.backend.foodpick.domain.restaurant.repository.RestaurantSearchRepository;
+import org.example.backend.foodpick.domain.review.repository.ReviewQueryRepository;
+import org.example.backend.foodpick.domain.restaurant.repository.RestaurantRepository;
+import org.example.backend.foodpick.domain.review.repository.ReviewRepository;
 import org.example.backend.foodpick.domain.user.dto.*;
 import org.example.backend.foodpick.domain.user.model.UserEntity;
 import org.example.backend.foodpick.domain.user.model.UserRole;
@@ -23,7 +27,11 @@ import org.springframework.stereotype.Service;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -32,6 +40,9 @@ public class UserAdminService {
     private final UserRepository userRepository;
     private final JwtTokenValidator jwtTokenValidator;
     private final UserQueryRepository userQueryRepository;
+    private final RestaurantRepository restaurantRepository;
+    private final ReviewRepository reviewRepository;
+    private final RestaurantSearchRepository restaurantSearchRepository;
     private final RedisDashboardService redisDashboardService;
     private final AlarmService alarmService;
 
@@ -178,38 +189,62 @@ public class UserAdminService {
         long totalUsers = userQueryRepository.countAllUsers();
         List<Long> allUserDataList = userQueryRepository.findAllUserData();
 
-        // 주간 방문 통계 (Monday ~ Sunday)
         LocalDate today = LocalDate.now();
+
+        LocalDateTime todayStart = today.atStartOfDay();
+        LocalDateTime todayEnd = today.atTime(23, 59, 59, 999_999_999);
+
         LocalDate weekStart = today.with(DayOfWeek.MONDAY);
         LocalDate weekEnd = today.with(DayOfWeek.SUNDAY);
+        LocalDateTime weekStartDateTime = weekStart.atStartOfDay();
+        LocalDateTime weekEndDateTime = weekEnd.atTime(23, 59, 59, 999_999_999);
+
+        LocalDate monthStart = today.withDayOfMonth(1);
+        LocalDate monthEnd = today.withDayOfMonth(today.lengthOfMonth());
+        LocalDateTime monthStartDateTime = monthStart.atStartOfDay();
+        LocalDateTime monthEndDateTime = monthEnd.atTime(23, 59, 59, 999_999_999);
+
 
         List<Integer> weekTimeSeries = redisDashboardService.getTimeSeries(weekStart, weekEnd);
 
         int[] allUserData = allUserDataList.stream().mapToInt(Long::intValue).toArray();
         int[] weekUserData = weekTimeSeries.stream().mapToInt(Integer::intValue).toArray();
 
-        /* 이 아래 부분은 아직 맛집/리뷰 데이터가 없으므로 하드코딩 유지 */
-        int restaurants = 1234;
-        int todayReviews = 52;
-        int weekReviews = 280;
-        int monthReviews = 1128;
+        long totalRestaurants = restaurantRepository.count();
 
-        int[] barData = new int[]{50, 60, 70, 65, 80, 90, 70};
+        long totalTodayReviews = reviewRepository.countByCreatedAtBetween(todayStart, todayEnd);
+        long totalWeekReviews = reviewRepository.countByCreatedAtBetween(weekStartDateTime, weekEndDateTime);
+        long totalMonthReviews = reviewRepository.countByCreatedAtBetween(monthStartDateTime, monthEndDateTime);
 
-        PieItem[] pieData = new PieItem[]{
-                PieItem.builder().name("한식").population(40).build(),
-                PieItem.builder().name("중식").population(20).build(),
-                PieItem.builder().name("일식").population(15).build(),
-                PieItem.builder().name("양식").population(10).build(),
-                PieItem.builder().name("카페").population(15).build()
-        };
+        List<Integer> barDataList = redisDashboardService.getWeeklyReviewCounts(weekStart, weekEnd);
+        int[] barData = barDataList.stream().mapToInt(Integer::intValue).toArray();
+
+        List<PieItem> pieDataList = restaurantRepository.countRestaurantsByCategory();
+
+        long total = pieDataList.stream()
+                .mapToLong(PieItem::getPopulation)
+                .sum();
+
+        List<PieItem> percentPieDataList = pieDataList.stream()
+                .map(item -> {
+                    long percent = (total == 0)
+                            ? 0
+                            : (item.getPopulation() * 100) / total;
+
+                    return PieItem.builder()
+                            .name(item.getName())
+                            .population(percent)
+                            .build();
+                })
+                .toList();
+        PieItem[] pieData = percentPieDataList.toArray(new PieItem[0]);
 
         UserDashboardResponse response = UserDashboardResponse.create(
                 totalUsers,
-                restaurants,
-                todayReviews,
-                weekReviews,
-                monthReviews,
+                (int) totalRestaurants,
+                (int) totalTodayReviews,
+                (int) totalWeekReviews,
+                (int) totalMonthReviews,
                 allUserData,
                 weekUserData,
                 barData,
@@ -235,55 +270,10 @@ public class UserAdminService {
 
         LocalDate today = LocalDate.now();
 
-        long todayVisitors = redisDashboardService.getTodayVisitors();
-        long todayJoins = userRepository.countByCreatedAtBetween(
-                today.atStartOfDay(), today.atTime(23,59,59)
-        );
-        List<Integer> todaySeries = redisDashboardService.getTimeSeries(today, today);
-
-        StatsPeriodDetail todayStats =
-                StatsPeriodDetail.ofUserStats(todayVisitors, todayJoins, todaySeries);
-
-        LocalDate weekStart = today.with(DayOfWeek.MONDAY);
-        LocalDate weekEnd = today.with(DayOfWeek.SUNDAY);
-
-        long weekVisitors = redisDashboardService.getWeekVisitors();
-        long weekJoins = userRepository.countByCreatedAtBetween(
-                weekStart.atStartOfDay(), weekEnd.atTime(23,59,59)
-        );
-        List<Integer> weekSeries = redisDashboardService.getTimeSeries(weekStart, weekEnd);
-
-        StatsPeriodDetail weekStats =
-                StatsPeriodDetail.ofUserStats(weekVisitors, weekJoins, weekSeries);
-
-        LocalDate monthStart = today.withDayOfMonth(1);
-        LocalDate monthEnd = today.withDayOfMonth(today.lengthOfMonth());
-
-        long monthVisitors = redisDashboardService.getMonthVisitors();
-        long monthJoins = userRepository.countByCreatedAtBetween(
-                monthStart.atStartOfDay(), monthEnd.atTime(23,59,59)
-        );
-        List<Integer> monthSeries = redisDashboardService.getTimeSeries(monthStart, monthEnd);
-
-        StatsPeriodDetail monthStats =
-                StatsPeriodDetail.ofUserStats(monthVisitors, monthJoins, monthSeries);
-
-
-        StatsPeriodDetail customStats;
-
-        if (startDate != null && endDate != null) {
-            long customVisitors = redisDashboardService.getCustomVisitors(startDate, endDate);
-            long customJoins = userRepository.countByCreatedAtBetween(
-                    startDate.atStartOfDay(), endDate.atTime(23,59,59)
-            );
-            List<Integer> customSeries = redisDashboardService.getTimeSeries(startDate, endDate);
-
-            customStats = StatsPeriodDetail.ofUserStats(customVisitors, customJoins, customSeries);
-
-        } else {
-            // 기본값
-            customStats = StatsPeriodDetail.ofUserStats(0, 0, List.of());
-        }
+        StatsPeriodDetail todayStats = buildTodayStats(today);
+        StatsPeriodDetail weekStats = buildWeekStats(today);
+        StatsPeriodDetail monthStats = buildMonthStats(today);
+        StatsPeriodDetail customStats = buildCustomStats(startDate, endDate);
 
         UserStatsDetailResponse response = UserStatsDetailResponse.of(
                 todayStats,
@@ -293,6 +283,289 @@ public class UserAdminService {
         );
 
         return ResponseEntity.ok(new ApiResponse<>(200, "유저 통계 조회 성공", response));
+    }
+
+    private StatsPeriodDetail buildTodayStats(LocalDate today) {
+        LocalDate yesterday = today.minusDays(1);
+
+        long visitors = redisDashboardService.getTodayVisitors();
+        long prevVisitors = redisDashboardService.getCustomVisitors(yesterday, yesterday);
+
+        long joins = userRepository.countByCreatedAtBetween(
+                today.atStartOfDay(), today.atTime(23,59,59));
+        long prevJoins = userRepository.countByCreatedAtBetween(
+                yesterday.atStartOfDay(), yesterday.atTime(23,59,59));
+
+        long restaurants = restaurantRepository.countByCreatedDateBetween(
+                today.atStartOfDay(), today.atTime(23,59,59));
+        long prevRestaurants = restaurantRepository.countByCreatedDateBetween(
+                yesterday.atStartOfDay(), yesterday.atTime(23,59,59));
+
+        long reviews = reviewRepository.countByCreatedAtBetween(
+                today.atStartOfDay(), today.atTime(23,59,59));
+        long prevReviews = reviewRepository.countByCreatedAtBetween(
+                yesterday.atStartOfDay(), yesterday.atTime(23,59,59));
+
+        List<Integer> series = redisDashboardService.getTimeSeries(today, today);
+
+        Map<String, Integer> categories = buildCategoryPercentMap(today.atStartOfDay(), today.atTime(23,59,59));
+
+        List<Integer> ratingDistribution =
+                buildRatingDistribution(
+                        today.atStartOfDay(),
+                        today.atTime(23,59,59)
+                );
+
+        List<TopSearch> topSearches =
+                buildTopSearches(today.atStartOfDay(), today.atTime(23,59,59));
+
+        return StatsPeriodDetail.ofUserStats(
+                visitors, prevVisitors,
+                joins, prevJoins,
+                restaurants, prevRestaurants,
+                reviews, prevReviews,
+                series,
+                categories, ratingDistribution, topSearches
+        );
+    }
+
+    private StatsPeriodDetail buildWeekStats(LocalDate today) {
+        LocalDate weekStart = today.with(DayOfWeek.MONDAY);
+        LocalDate weekEnd = today.with(DayOfWeek.SUNDAY);
+
+        LocalDate prevWeekStart = weekStart.minusWeeks(1);
+        LocalDate prevWeekEnd = weekEnd.minusWeeks(1);
+
+        long visitors = redisDashboardService.getWeekVisitors();
+        long prevVisitors = redisDashboardService.getCustomVisitors(prevWeekStart, prevWeekEnd);
+
+        long joins = userRepository.countByCreatedAtBetween(
+                weekStart.atStartOfDay(), weekEnd.atTime(23,59,59));
+        long prevJoins = userRepository.countByCreatedAtBetween(
+                prevWeekStart.atStartOfDay(), prevWeekEnd.atTime(23,59,59));
+
+        long restaurants = restaurantRepository.countByCreatedDateBetween(
+                weekStart.atStartOfDay(), weekEnd.atTime(23,59,59));
+        long prevRestaurants = restaurantRepository.countByCreatedDateBetween(
+                prevWeekStart.atStartOfDay(), prevWeekEnd.atTime(23,59,59));
+
+        long reviews = reviewRepository.countByCreatedAtBetween(
+                weekStart.atStartOfDay(), weekEnd.atTime(23,59,59));
+        long prevReviews = reviewRepository.countByCreatedAtBetween(
+                prevWeekStart.atStartOfDay(), prevWeekEnd.atTime(23,59,59));
+
+        List<Integer> series = redisDashboardService.getTimeSeries(weekStart, weekEnd);
+
+        Map<String, Integer> categories =
+                buildCategoryPercentMap(
+                        weekStart.atStartOfDay(),
+                        weekEnd.atTime(23,59,59)
+                );
+
+        List<Integer> ratingDistribution =
+                buildRatingDistribution(
+                        weekStart.atStartOfDay(),
+                        weekEnd.atTime(23,59,59)
+                );
+
+        List<TopSearch> topSearches =
+                buildTopSearches(weekStart.atStartOfDay(), weekEnd.atTime(23,59,59));
+
+        return StatsPeriodDetail.ofUserStats(
+                visitors, prevVisitors,
+                joins, prevJoins,
+                restaurants, prevRestaurants,
+                reviews, prevReviews,
+                series,
+                categories, ratingDistribution, topSearches
+        );
+    }
+
+    private StatsPeriodDetail buildMonthStats(LocalDate today) {
+        LocalDate monthStart = today.withDayOfMonth(1);
+        LocalDate monthEnd = today.withDayOfMonth(today.lengthOfMonth());
+
+        LocalDate prevMonthStart = monthStart.minusMonths(1);
+        LocalDate prevMonthEnd = prevMonthStart.withDayOfMonth(prevMonthStart.lengthOfMonth());
+
+        long visitors = redisDashboardService.getMonthVisitors();
+        long prevVisitors = redisDashboardService.getCustomVisitors(prevMonthStart, prevMonthEnd);
+
+        long joins = userRepository.countByCreatedAtBetween(
+                monthStart.atStartOfDay(), monthEnd.atTime(23,59,59));
+        long prevJoins = userRepository.countByCreatedAtBetween(
+                prevMonthStart.atStartOfDay(), prevMonthEnd.atTime(23,59,59));
+
+        long restaurants = restaurantRepository.countByCreatedDateBetween(
+                monthStart.atStartOfDay(), monthEnd.atTime(23,59,59));
+        long prevRestaurants = restaurantRepository.countByCreatedDateBetween(
+                prevMonthStart.atStartOfDay(), prevMonthEnd.atTime(23,59,59));
+
+        long reviews = reviewRepository.countByCreatedAtBetween(
+                monthStart.atStartOfDay(), monthEnd.atTime(23,59,59));
+        long prevReviews = reviewRepository.countByCreatedAtBetween(
+                prevMonthStart.atStartOfDay(), prevMonthEnd.atTime(23,59,59));
+
+        List<Integer> series = redisDashboardService.getTimeSeries(monthStart, monthEnd);
+
+        Map<String, Integer> categories =
+                buildCategoryPercentMap(
+                        monthStart.atStartOfDay(),
+                        monthEnd.atTime(23,59,59)
+                );
+
+        List<Integer> ratingDistribution =
+                buildRatingDistribution(
+                        monthStart.atStartOfDay(),
+                        monthEnd.atTime(23,59,59)
+                );
+
+        List<TopSearch> topSearches =
+                buildTopSearches(monthStart.atStartOfDay(), monthEnd.atTime(23,59,59));
+
+
+        return StatsPeriodDetail.ofUserStats(
+                visitors, prevVisitors,
+                joins, prevJoins,
+                restaurants, prevRestaurants,
+                reviews, prevReviews,
+                series,
+                categories, ratingDistribution, topSearches
+        );
+    }
+
+    private StatsPeriodDetail buildCustomStats(LocalDate startDate, LocalDate endDate) {
+
+        if (startDate == null || endDate == null) {
+            return StatsPeriodDetail.ofUserStats(
+                    0, 0,
+                    0, 0,
+                    0, 0,
+                    0, 0,
+                    List.of(),
+                    Map.of(),
+                    List.of(),
+                    List.of()
+            );
+        }
+
+        long days = ChronoUnit.DAYS.between(startDate, endDate) + 1;
+        LocalDate prevStart = startDate.minusDays(days);
+        LocalDate prevEnd = endDate.minusDays(days);
+
+        long visitors = redisDashboardService.getCustomVisitors(startDate, endDate);
+        long prevVisitors = redisDashboardService.getCustomVisitors(prevStart, prevEnd);
+
+        long joins = userRepository.countByCreatedAtBetween(
+                startDate.atStartOfDay(), endDate.atTime(23,59,59));
+        long prevJoins = userRepository.countByCreatedAtBetween(
+                prevStart.atStartOfDay(), prevEnd.atTime(23,59,59));
+
+        long restaurants = restaurantRepository.countByCreatedDateBetween(
+                startDate.atStartOfDay(), endDate.atTime(23,59,59));
+        long prevRestaurants = restaurantRepository.countByCreatedDateBetween(
+                prevStart.atStartOfDay(), prevEnd.atTime(23,59,59));
+
+        long reviews = reviewRepository.countByCreatedAtBetween(
+                startDate.atStartOfDay(), endDate.atTime(23,59,59));
+        long prevReviews = reviewRepository.countByCreatedAtBetween(
+                prevStart.atStartOfDay(), prevEnd.atTime(23,59,59));
+
+        List<Integer> series = redisDashboardService.getTimeSeries(startDate, endDate);
+
+        Map<String, Integer> categories =
+                buildCategoryPercentMap(
+                        startDate.atStartOfDay(),
+                        endDate.atTime(23,59,59)
+                );
+
+        List<Integer> ratingDistribution =
+                buildRatingDistribution(
+                        startDate.atStartOfDay(),
+                        endDate.atTime(23,59,59)
+                );
+
+        List<TopSearch> topSearches =
+                buildTopSearches(startDate.atStartOfDay(), endDate.atTime(23,59,59));
+
+
+        return StatsPeriodDetail.ofUserStats(
+                visitors, prevVisitors,
+                joins, prevJoins,
+                restaurants, prevRestaurants,
+                reviews, prevReviews,
+                series,
+                categories, ratingDistribution, topSearches
+        );
+    }
+
+    private Map<String, Integer> buildCategoryPercentMap(
+            LocalDateTime start,
+            LocalDateTime end
+    ) {
+        List<PieItem> rawList =
+                restaurantRepository.countRestaurantsByCategoryBetween(start, end);
+
+        long total = rawList.stream()
+                .mapToLong(PieItem::getPopulation)
+                .sum();
+
+        if (total == 0) return Map.of();
+
+        Map<String, Integer> percentMap = rawList.stream()
+                .collect(Collectors.toMap(
+                        PieItem::getName,
+                        item -> (int) ((item.getPopulation() * 100) / total)
+                ));
+
+        int sum = percentMap.values().stream().mapToInt(Integer::intValue).sum();
+        if (sum != 100 && !percentMap.isEmpty()) {
+            String key = percentMap.keySet().iterator().next();
+            percentMap.put(key, percentMap.get(key) + (100 - sum));
+        }
+
+        return percentMap;
+    }
+
+    private List<Integer> buildRatingDistribution(
+            LocalDateTime start,
+            LocalDateTime end
+    ) {
+        List<Object[]> raw =
+                reviewRepository.countRatingDistributionBetween(start, end);
+
+        Map<Integer, Integer> map = new HashMap<>();
+        for (int i = 1; i <= 5; i++) {
+            map.put(i, 0);
+        }
+
+        for (Object[] row : raw) {
+            int rating = ((Number) row[0]).intValue();
+            int count  = ((Number) row[1]).intValue();
+            map.put(rating, count);
+        }
+
+        return List.of(
+                map.get(1),
+                map.get(2),
+                map.get(3),
+                map.get(4),
+                map.get(5)
+        );
+    }
+
+    private List<TopSearch> buildTopSearches(
+            LocalDateTime start,
+            LocalDateTime end
+    ) {
+        return restaurantSearchRepository.findTopKeywordsBetween(start, end)
+                .stream()
+                .limit(5)
+                .map(row -> new TopSearch(
+                        (String) row[0],
+                        ((Number) row[1]).intValue()
+                ))
+                .toList();
     }
 
     private LocalDateTime calculateBanDuration(int warning) {

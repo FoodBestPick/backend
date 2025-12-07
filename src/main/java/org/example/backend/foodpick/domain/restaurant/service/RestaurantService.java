@@ -18,6 +18,7 @@ import org.example.backend.foodpick.domain.food.repository.FoodBridgeRepository;
 import org.example.backend.foodpick.domain.like.repository.RestaurantLikeRepository;
 import org.example.backend.foodpick.global.jwt.JwtTokenValidator;
 import org.example.backend.foodpick.global.util.ApiResponse;
+import org.example.backend.foodpick.infra.redis.service.RedisRestaurantService;
 import org.example.backend.foodpick.infra.s3.service.S3Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -47,6 +49,8 @@ public class RestaurantService {
     private final JwtTokenValidator jwtTokenValidator;
     private final S3Service s3Service;
     private final ObjectMapper objectMapper;
+    private final RedisRestaurantService redisRestaurantService;
+    private final RestaurantSearchRepository restaurantSearchRepository;
 
     // ✅ 맛집 등록
     @Transactional
@@ -317,10 +321,22 @@ public class RestaurantService {
     }
 
     // ✅ [통합 검색] 키워드, 카테고리, 태그, 가격 필터, 정렬, 평점, 영업중
-    @Transactional(readOnly = true)
+    @Transactional
     public ResponseEntity<ApiResponse<List<RestaurantResponse>>> searchRestaurants(
             String keyword, String category, List<String> tags, Integer minPrice, Integer maxPrice,
             Double minRating, Boolean openNow, String sort) {
+
+        if (keyword != null && !keyword.isBlank()) {
+            redisRestaurantService.increaseSearchCount(keyword);
+
+            restaurantSearchRepository.save(
+                    RestaurantSearchEntity.builder()
+                            .keyword(keyword)
+                            .count(1L)
+                            .createdAt(LocalDateTime.now())
+                            .build()
+            );
+        }
         
         List<Restaurant> all = restaurantRepository.findAll();
         
