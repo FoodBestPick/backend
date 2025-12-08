@@ -20,10 +20,10 @@ public class ReportAdminController {
     @GetMapping
     public ResponseEntity<ApiResponse<ReportPageResponse>> getAllReports(
             @RequestHeader("Authorization") String token,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false) String targetType
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam(value = "status", required = false) String status,
+            @RequestParam(value = "targetType", required = false) String targetType
     ) {
         return reportAdminService.getAllReports(token, page, size, status, targetType);
     }

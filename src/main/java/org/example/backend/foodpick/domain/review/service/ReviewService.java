@@ -134,4 +134,17 @@ public class ReviewService {
         
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
+
+    public ResponseEntity<ApiResponse<Page<ReviewResponse>>> getMyReviews(Pageable pageable, String token) {
+        Long userId = jwtTokenValidator.getUserId(token);
+        Page<Review> reviews = reviewRepository.findAllByUser_Id(userId, pageable);
+
+        Page<ReviewResponse> responses = reviews.map(review -> {
+            boolean isLiked = likeRepository.existsByUserAndRestaurantReview(userId, review.getId());
+            long likeCount = likeRepository.countByRestaurantReview(review.getId());
+            return ReviewResponse.from(review, userId, isLiked, likeCount);
+        });
+
+        return ResponseEntity.ok(ApiResponse.success(responses));
+    }
 }

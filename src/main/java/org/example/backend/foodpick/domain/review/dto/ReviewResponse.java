@@ -20,6 +20,7 @@ public class ReviewResponse {
     private String userNickname;
     private String userProfileImage;
     private Long restaurantId;
+    private String restaurantName;
     private String content;
     private Double rating;
     private List<String> images;
@@ -40,6 +41,7 @@ public class ReviewResponse {
                 .userNickname(review.getUser().getNickname())
                 .userProfileImage(review.getUser().getImageUrl())
                 .restaurantId(review.getRestaurant().getId())
+                .restaurantName(review.getRestaurant().getName())
                 .content(review.getContent())
                 .rating(review.getRating())
                 .images(review.getImages())

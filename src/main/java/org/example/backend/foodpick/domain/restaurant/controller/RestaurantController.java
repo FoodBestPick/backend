@@ -107,7 +107,10 @@ public class RestaurantController {
      * 상세 조회
      */
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<RestaurantResponse>> getRestaurant(@PathVariable("id") Long id) {
-        return restaurantService.getRestaurantById(id);
+    public ResponseEntity<ApiResponse<RestaurantResponse>> getRestaurant(
+            @PathVariable("id") Long id,
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
+        String token = (authorization != null && authorization.startsWith("Bearer ")) ? authorization.substring(7) : "";
+        return restaurantService.getRestaurantById(id, token);
     }
 }
