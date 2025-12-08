@@ -1,7 +1,6 @@
 package org.example.backend.foodpick.infra.redis.service;
 
 import lombok.RequiredArgsConstructor;
-import org.example.backend.foodpick.domain.user.model.UserEntity;
 import org.example.backend.foodpick.domain.user.model.UserRole;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -16,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
-public class RedisService {
+public class RedisDashboardService {
 
     private final RedisTemplate<String, String> redisTemplate;
 
@@ -333,4 +332,30 @@ public class RedisService {
     private boolean isMonthRange(LocalDate start, LocalDate end) {
         return start.getDayOfMonth() == 1 && end.getDayOfMonth() == end.lengthOfMonth();
     }
+
+    public void recordNewReview(LocalDate reviewDate) {
+        int year = reviewDate.get(IsoFields.WEEK_BASED_YEAR);
+        int weekOfYear = reviewDate.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR);
+        String weekKey = "review:daily:week:" + year + "-W" + weekOfYear;
+        int dayOfWeekIndex = reviewDate.getDayOfWeek().getValue() - 1; // 0=월요일, 6=일요일
+
+        String dailyKey = "review:count:day:" + reviewDate.toString();
+        redisTemplate.opsForValue().increment(dailyKey, 1);
+        redisTemplate.expire(dailyKey, 8, TimeUnit.DAYS); // 8일 후 만료
+    }
+
+    public List<Integer> getWeeklyReviewCounts(LocalDate weekStart, LocalDate weekEnd) {
+        List<Integer> counts = new ArrayList<>();
+        LocalDate current = weekStart;
+
+        while (!current.isAfter(weekEnd)) {
+            String dailyKey = "review:count:day:" + current.toString();
+            String countStr = redisTemplate.opsForValue().get(dailyKey);
+            int count = (countStr != null) ? Integer.parseInt(countStr) : 0;
+            counts.add(count);
+            current = current.plusDays(1);
+        }
+        return counts;
+    }
+
 }

@@ -65,6 +65,14 @@ public class Restaurant {
     @Builder.Default
     private List<FoodBridge> foodBridges = new ArrayList<>();
 
+    // ✅ 리뷰 수 (가상 컬럼)
+    @org.hibernate.annotations.Formula("(SELECT COUNT(*) FROM review r WHERE r.restaurant_id = restaurant_id)")
+    private Long reviewCount;
+
+    // ✅ 평균 평점 (가상 컬럼)
+    @org.hibernate.annotations.Formula("(SELECT COALESCE(AVG(r.review_rating), 0) FROM review r WHERE r.restaurant_id = restaurant_id)")
+    private Double averageRating;
+
     @PrePersist
     public void prePersist() {
         if (count == null) count = 0L;

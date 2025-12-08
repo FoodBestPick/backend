@@ -51,8 +51,8 @@ public class UserAdminController {
     @GetMapping("/dashboard/detail")
     public ResponseEntity<ApiResponse<UserStatsDetailResponse>> getUserStats(
             @RequestHeader("Authorization") String token,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
+            @RequestParam(value = "startDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(value = "endDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
     ) {
         return userAdminService.getUserStats(token, startDate, endDate);
     }

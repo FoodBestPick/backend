@@ -1,5 +1,6 @@
 package org.example.backend.foodpick.domain.restaurant.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -33,6 +34,14 @@ public class RestaurantResponse {
     private List<FoodResponse> categories;
     private List<TimeResponse> times;
 
+    // ✅ [추가] 리뷰 수 및 평점
+    private Long reviewCount;
+    private Double averageRating;
+    
+    // ✅ [추가] 좋아요 여부
+    @JsonProperty("isLiked")
+    private boolean isLiked;
+
     // ✅ [추가] 프론트엔드 호환성 필드 (이게 있어야 화면에 나옴)
     private String description; // introduce의 별칭
     private List<String> images; // pictures의 URL 리스트 버전
@@ -40,6 +49,10 @@ public class RestaurantResponse {
 
     // ✅ [추가] 엔티티 -> DTO 변환 메서드 (무한 재귀 방지)
     public static RestaurantResponse from(Restaurant restaurant) {
+        return from(restaurant, false);
+    }
+
+    public static RestaurantResponse from(Restaurant restaurant, boolean isLiked) {
         return RestaurantResponse.builder()
                 .id(restaurant.getId())
                 .name(restaurant.getName())
@@ -51,25 +64,29 @@ public class RestaurantResponse {
                 .count(restaurant.getCount())
                 .createdDate(restaurant.getCreatedDate())
                 .updatedDate(restaurant.getUpdatedDate())
-                .menus(restaurant.getMenus().stream()
+                .menus(restaurant.getMenus() != null ? restaurant.getMenus().stream()
                         .map(m -> new MenuResponse(m.getId(), m.getName(), m.getPrice()))
-                        .collect(Collectors.toList()))
-                .pictures(restaurant.getPictures().stream()
+                        .collect(Collectors.toList()) : List.of())
+                .pictures(restaurant.getPictures() != null ? restaurant.getPictures().stream()
                         .map(p -> new PictureResponse(p.getId(), p.getUrl()))
-                        .collect(Collectors.toList()))
-                .images(restaurant.getPictures().stream() // 프론트엔드용 이미지 배열
+                        .collect(Collectors.toList()) : List.of())
+                .images(restaurant.getPictures() != null ? restaurant.getPictures().stream() // 프론트엔드용 이미지 배열
                         .map(RestaurantPicture::getUrl)
-                        .collect(Collectors.toList()))
-                .tags(restaurant.getTagBridges().stream()
+                        .collect(Collectors.toList()) : List.of())
+                .tags(restaurant.getTagBridges() != null ? restaurant.getTagBridges().stream()
                         .map(tb -> new TagResponse(tb.getTag().getId(), tb.getTag().getName(), tb.getTag().getCategory()))
-                        .collect(Collectors.toList()))
-                .categories(restaurant.getFoodBridges().stream()
+                        .collect(Collectors.toList()) : List.of())
+                .categories(restaurant.getFoodBridges() != null ? restaurant.getFoodBridges().stream()
                         .map(fb -> new FoodResponse(fb.getFood().getId(), fb.getFood().getName()))
-                        .collect(Collectors.toList()))
-                .category(restaurant.getFoodBridges().isEmpty() ? "미지정" : restaurant.getFoodBridges().get(0).getFood().getName()) // 대표 카테고리
-                .times(restaurant.getTimes().stream()
+                        .collect(Collectors.toList()) : List.of())
+                .category((restaurant.getFoodBridges() == null || restaurant.getFoodBridges().isEmpty() || restaurant.getFoodBridges().get(0).getFood() == null) 
+                        ? "미지정" : restaurant.getFoodBridges().get(0).getFood().getName()) // 대표 카테고리
+                .times(restaurant.getTimes() != null ? restaurant.getTimes().stream()
                         .map(t -> new TimeResponse(t.getId(), t.getWeek(), t.getStartTime(), t.getEndTime(), t.getRestTime()))
-                        .collect(Collectors.toList()))
+                        .collect(Collectors.toList()) : List.of())
+                .reviewCount(restaurant.getReviewCount() != null ? restaurant.getReviewCount() : 0L)
+                .averageRating(restaurant.getAverageRating() != null ? Math.round(restaurant.getAverageRating() * 10) / 10.0 : 0.0)
+                .isLiked(isLiked)
                 .build();
     }
 }

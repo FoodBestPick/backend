@@ -40,6 +40,9 @@ dependencies {
     annotationProcessor 'jakarta.persistence:jakarta.persistence-api'
     annotationProcessor 'jakarta.annotation:jakarta.annotation-api'
 
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    implementation 'com.google.firebase:firebase-admin:9.2.0'
+
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'org.postgresql:postgresql'
@@ -53,6 +56,11 @@ dependencies {
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.5")
     implementation("io.jsonwebtoken:jjwt-jackson:0.11.5") // jwt
 }
+
+tasks.withType(JavaCompile) {
+    options.compilerArgs.add("-parameters")
+}
+
 
 tasks.named('test') {
     useJUnitPlatform()

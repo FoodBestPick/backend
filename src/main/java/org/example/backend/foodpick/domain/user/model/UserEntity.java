@@ -56,6 +56,9 @@ public class UserEntity {
     @Column(length = 255)
     private String refreshToken;
 
+    @Column(length = 255)
+    private String fcmToken;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -84,15 +87,11 @@ public class UserEntity {
 
     public void updateStatus(UserStatus status, LocalDateTime BanEndAt) {
         this.status = status;
-        this.banEndAt = BanEndAt;
+        this.banEndAt = BanEndAt.withNano(0);
     }
 
     public void updateMessage(String message) {
         this.statusMessage = message;
-    }
-
-    public void updateRefreshToken(String refreshToken) {
-        this.refreshToken = refreshToken;
     }
 
     public void updatePassword(String newPassword) {
@@ -114,6 +113,15 @@ public class UserEntity {
 
     public void updatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public void clearBan() {
+        this.status = UserStatus.ACTIVED;
+        this.banEndAt = null;
+    }
+
+    public void updateFcmToken(String fcmToken) {
+        this.fcmToken = fcmToken;
     }
 
     public static UserEntity ofSignUp(String email, String password, String nickname) {
