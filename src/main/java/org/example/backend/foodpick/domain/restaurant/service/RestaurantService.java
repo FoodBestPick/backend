@@ -18,6 +18,7 @@ import org.example.backend.foodpick.domain.food.repository.FoodBridgeRepository;
 import org.example.backend.foodpick.domain.like.repository.RestaurantLikeRepository;
 import org.example.backend.foodpick.global.jwt.JwtTokenValidator;
 import org.example.backend.foodpick.global.util.ApiResponse;
+import org.example.backend.foodpick.infra.redis.service.RedisDashboardService;
 import org.example.backend.foodpick.infra.redis.service.RedisRestaurantService;
 import org.example.backend.foodpick.infra.s3.service.S3Service;
 import org.springframework.data.domain.Page;
@@ -27,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -51,6 +53,7 @@ public class RestaurantService {
     private final ObjectMapper objectMapper;
     private final RedisRestaurantService redisRestaurantService;
     private final RestaurantSearchRepository restaurantSearchRepository;
+    private final RedisDashboardService redisDashboardService;
 
     // ✅ 맛집 등록
     @Transactional
@@ -164,6 +167,8 @@ public class RestaurantService {
                     }
                 }
             }
+
+            redisDashboardService.recordNewRestaurant(LocalDate.now());
 
             return RestaurantResponse.from(savedRestaurant);
 

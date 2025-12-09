@@ -187,7 +187,6 @@ public class UserAdminService {
         }
 
         long totalUsers = userQueryRepository.countAllUsers();
-        List<Long> allUserDataList = userQueryRepository.findAllUserData();
 
         LocalDate today = LocalDate.now();
 
@@ -207,7 +206,11 @@ public class UserAdminService {
 
         List<Integer> weekTimeSeries = redisDashboardService.getTimeSeries(weekStart, weekEnd);
 
-        int[] allUserData = allUserDataList.stream().mapToInt(Long::intValue).toArray();
+        List<Integer> allUserDataList =
+                redisDashboardService.getWeeklyUserCounts(weekStart, weekEnd);
+
+        int[] allUserData =
+                allUserDataList.stream().mapToInt(Integer::intValue).toArray();
         int[] weekUserData = weekTimeSeries.stream().mapToInt(Integer::intValue).toArray();
 
         long totalRestaurants = restaurantRepository.count();
@@ -218,6 +221,12 @@ public class UserAdminService {
 
         List<Integer> barDataList = redisDashboardService.getWeeklyReviewCounts(weekStart, weekEnd);
         int[] barData = barDataList.stream().mapToInt(Integer::intValue).toArray();
+
+        List<Integer> restaurantBarDataList =
+                redisDashboardService.getWeeklyRestaurantCounts(weekStart, weekEnd);
+
+        int[] allRestaurantData =
+                restaurantBarDataList.stream().mapToInt(Integer::intValue).toArray();
 
         List<PieItem> pieDataList = restaurantRepository.countRestaurantsByCategory();
 
@@ -246,6 +255,7 @@ public class UserAdminService {
                 (int) totalWeekReviews,
                 (int) totalMonthReviews,
                 allUserData,
+                allRestaurantData,
                 weekUserData,
                 barData,
                 pieData
@@ -585,4 +595,5 @@ public class UserAdminService {
                 return null;
         }
     }
+
 }
