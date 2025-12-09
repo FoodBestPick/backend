@@ -17,6 +17,7 @@ public class UserDashboardResponse {
     private int weekReviews;
     private int monthReviews;
 
+    private int[] allRestaurantData;
     private int[] allUserData;
     private int[] weekUserData;
     private int[] barData;
@@ -29,6 +30,7 @@ public class UserDashboardResponse {
             int weekReviews,
             int monthReviews,
             int[] allUserData,
+            int[] allRestaurantData,
             int[] weekUserData,
             int[] barData,
             PieItem[] pieData
@@ -40,6 +42,7 @@ public class UserDashboardResponse {
                 .weekReviews(weekReviews)
                 .monthReviews(monthReviews)
                 .allUserData(allUserData)
+                .allRestaurantData(allRestaurantData)
                 .weekUserData(weekUserData)
                 .barData(barData)
                 .pieData(pieData)
