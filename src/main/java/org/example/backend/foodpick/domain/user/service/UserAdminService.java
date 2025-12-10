@@ -149,6 +149,32 @@ public class UserAdminService {
         return ResponseEntity.ok(new ApiResponse<>(200, "해당 유저의 정지 처리가 완료되었습니다.", null));
     }
 
+    public ResponseEntity<ApiResponse<String>> unSuspendUser(String token, Long userId) {
+
+        Long adminId = jwtTokenValidator.getUserId(token);
+
+        UserEntity admin = userRepository.findById(adminId)
+                .orElseThrow(() -> new CustomException(ErrorException.USER_NOT_FOUND));
+
+        if (admin.getRole() != UserRole.ADMIN) {
+            throw new CustomException(ErrorException.NO_PERMISSION);
+        }
+
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorException.USER_NOT_FOUND));
+
+        if (user.getStatus() != UserStatus.SUSPENDED) {
+            throw new CustomException(ErrorException.INVALID_USER_STATUS);
+        }
+
+        user.updateStatus(UserStatus.ACTIVED, null);
+        user.updateMessage(null);
+
+        userRepository.save(user);
+
+        return ResponseEntity.ok(new ApiResponse<>(200, "해당 유저의 정지가 해제되었습니다.", null));
+    }
+
     public ResponseEntity<ApiResponse<String>> userRoleUpdate(String token, Long userId, UserRoleRequest request){
 
         Long adminId = jwtTokenValidator.getUserId(token);

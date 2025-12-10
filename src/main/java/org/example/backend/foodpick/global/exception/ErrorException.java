@@ -36,6 +36,7 @@ public enum ErrorException {
     INVALID_MATCHING_PERSON(400, "매칭 인원을 정확하게 입력해주세요."),
     ALREADY_MATCHING(400, "이미 매칭이 진행 중입니다."),
     NOT_MATCHING(400, "현재 매칭 중이 아닙니다."),
+    INVALID_USER_STATUS(400, "정지 상태가 아닙니다."),
 
     UNAUTHORIZED(401, "인증 권한이 없습니다."),
     TOKEN_EXPIRED(401, "토큰이 만료되었습니다."),

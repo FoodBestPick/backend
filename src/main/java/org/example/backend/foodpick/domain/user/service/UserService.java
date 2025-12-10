@@ -1,8 +1,10 @@
 package org.example.backend.foodpick.domain.user.service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.backend.foodpick.domain.auth.repository.AuthRepository;
 import org.example.backend.foodpick.domain.user.dto.DeleteUserRequest;
 import org.example.backend.foodpick.domain.user.dto.FcmTokenRequest;
+import org.example.backend.foodpick.domain.user.dto.MyPagePasswordRequest;
 import org.example.backend.foodpick.domain.user.dto.UserProfileResponse;
 import org.example.backend.foodpick.domain.user.model.UserEntity;
 import org.example.backend.foodpick.domain.user.repository.UserRepository;
@@ -25,6 +27,7 @@ public class UserService {
     private final JwtTokenValidator jwtTokenValidator;
     private final S3Service s3Service;
     private final PasswordEncoder passwordEncoder;
+    private final AuthRepository authRepository;
 
     public ResponseEntity<ApiResponse<UserProfileResponse>> getUser(String token){
         Long myId = jwtTokenValidator.getUserId(token);
@@ -127,5 +130,32 @@ public class UserService {
         userRepository.save(user);
 
         return ResponseEntity.ok(new ApiResponse<>(200, "Fcm-Token 업데이트가 완료되었습니다.", null));
+    }
+
+    public ResponseEntity<ApiResponse<String>> resetPassword(String token, MyPagePasswordRequest request) {
+
+        Long userId = jwtTokenValidator.getUserId(token);
+
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorException.USER_NOT_FOUND));
+
+        if (request.getPassword() == null || request.getPasswordConfirm() == null) {
+            throw new CustomException(ErrorException.PASSWORD_NOT_VERIFIED);
+        }
+
+        if (!request.getPassword().equals(request.getPasswordConfirm())) {
+            throw new CustomException(ErrorException.PASSWORD_NOT_CONFIRM);
+        }
+
+        if (passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new CustomException(ErrorException.SAME_PASSWORD_NOT_ALLOWED);
+        }
+
+        String encoded = passwordEncoder.encode(request.getPassword());
+        user.updatePassword(encoded);
+
+        authRepository.save(user);
+
+        return ResponseEntity.ok(new ApiResponse<>(200, "비밀번호가 변경되었습니다.", null));
     }
 }
