@@ -52,7 +52,7 @@ public enum ErrorException {
     NOT_INQUIRY_DELETE(403, "문의글을 삭제할 권한이 없습니다."),
     NOT_USER_DELETE(403, "본인만 계정을 삭제할 수 있습니다."),
     NO_PERMISSION(403, "관리자 기능입니다."),
-    PERMANENTLY_BANNED(403, "영구 정지된 계정입니다. 관리자에게 문의해주세요."),
+    PERMANENTLY_BANNED(403, "영구 정지된 계정입니다"),
     TEMP_BANNED(403, "정지된 계정입니다."),
 
     ALARM_FILTER_NOT_FOUND(404, "알람 필터값이 존재하지 않습니다."),

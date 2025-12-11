@@ -21,6 +21,7 @@ import org.example.backend.foodpick.global.exception.ErrorException;
 import org.example.backend.foodpick.global.jwt.JwtTokenValidator;
 import org.example.backend.foodpick.global.util.ApiResponse;
 import org.example.backend.foodpick.infra.redis.service.RedisDashboardService;
+import org.example.backend.foodpick.infra.websocket.WebSocketSessionManager;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -45,6 +46,7 @@ public class UserAdminService {
     private final RestaurantSearchRepository restaurantSearchRepository;
     private final RedisDashboardService redisDashboardService;
     private final AlarmService alarmService;
+    private final WebSocketSessionManager webSocketSessionManager;
 
     public ResponseEntity<ApiResponse<List<UserResponse>>> getUserAll(String token){
         Long myId = jwtTokenValidator.getUserId(token);
@@ -97,6 +99,11 @@ public class UserAdminService {
 
         if (banEndAt != null) {
             user.updateStatus(UserStatus.SUSPENDED, banEndAt);
+            webSocketSessionManager.forceLogout(user.getId());
+        }
+
+        if (banEndAt.getYear() > 9999) {
+            throw new CustomException(ErrorException.PERMANENTLY_BANNED);
         }
 
         userRepository.save(user);
@@ -145,6 +152,8 @@ public class UserAdminService {
         user.updateStatus(UserStatus.SUSPENDED, banEndAt);
         user.updateMessage(request.getMessage());
         userRepository.save(user);
+
+        webSocketSessionManager.forceLogout(user.getId());
 
         return ResponseEntity.ok(new ApiResponse<>(200, "해당 유저의 정지 처리가 완료되었습니다.", null));
     }
