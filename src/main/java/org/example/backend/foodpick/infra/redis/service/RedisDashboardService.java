@@ -358,4 +358,42 @@ public class RedisDashboardService {
         return counts;
     }
 
+    public void recordNewRestaurant(LocalDate restaurantDate) {
+        String dailyKey = "restaurant:count:day:" + restaurantDate.toString();
+
+        redisTemplate.opsForValue().increment(dailyKey, 1);
+        redisTemplate.expire(dailyKey, 8, TimeUnit.DAYS); // 8일 후 만료 (주간용)
+    }
+
+    public List<Integer> getWeeklyRestaurantCounts(LocalDate weekStart, LocalDate weekEnd) {
+        List<Integer> counts = new ArrayList<>();
+        LocalDate current = weekStart;
+
+        while (!current.isAfter(weekEnd)) {
+            String dailyKey = "restaurant:count:day:" + current.toString();
+            String countStr = redisTemplate.opsForValue().get(dailyKey);
+
+            int count = (countStr != null) ? Integer.parseInt(countStr) : 0;
+            counts.add(count);
+
+            current = current.plusDays(1);
+        }
+
+        return counts;
+    }
+
+    public List<Integer> getWeeklyUserCounts(LocalDate weekStart, LocalDate weekEnd) {
+        List<Integer> result = new ArrayList<>();
+        LocalDate cur = weekStart;
+
+        while (!cur.isAfter(weekEnd)) {
+            String dayKey = "visitors:day:" + cur;
+            Set<String> users = redisTemplate.opsForSet().members(dayKey);
+            result.add(users != null ? users.size() : 0);
+
+            cur = cur.plusDays(1);
+        }
+        return result;
+    }
+
 }

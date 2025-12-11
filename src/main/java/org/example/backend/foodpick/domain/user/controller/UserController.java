@@ -1,8 +1,10 @@
 package org.example.backend.foodpick.domain.user.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.example.backend.foodpick.domain.auth.dto.ResetPasswordRequest;
 import org.example.backend.foodpick.domain.user.dto.DeleteUserRequest;
 import org.example.backend.foodpick.domain.user.dto.FcmTokenRequest;
+import org.example.backend.foodpick.domain.user.dto.MyPagePasswordRequest;
 import org.example.backend.foodpick.domain.user.dto.UserProfileResponse;
 import org.example.backend.foodpick.domain.user.service.UserService;
 import org.example.backend.foodpick.global.util.ApiResponse;
@@ -48,5 +50,11 @@ public class UserController {
     public ResponseEntity<ApiResponse<String>> updateFcmToken(@RequestHeader("Authorization") String token,
                                                               @RequestBody FcmTokenRequest request){
         return userService.updateFcmToken(token, request);
+    }
+
+    @PostMapping("/password/reset")
+    public ResponseEntity<ApiResponse<String>> resetPassword(@RequestHeader("Authorization") String token,
+                                                             @RequestBody MyPagePasswordRequest request){
+        return userService.resetPassword(token, request);
     }
 }

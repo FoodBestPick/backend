@@ -36,6 +36,14 @@ public class UserAdminController {
         return userAdminService.userSuspende(token, userId, request);
     }
 
+    @PatchMapping("/{user_id}/unsuspend")
+    public ResponseEntity<ApiResponse<String>> unSuspendUser(
+            @RequestHeader("Authorization") String token,
+            @PathVariable("user_id") Long userId
+    ){
+        return userAdminService.unSuspendUser(token, userId);
+    }
+
     @PatchMapping("/{user_id}/role")
     public ResponseEntity<ApiResponse<String>> userRoleUpdate(@RequestHeader("Authorization") String token,
                                                               @PathVariable("user_id") Long userId,

@@ -27,8 +27,13 @@ public class ChatMessageEntity {
     @Column(length=255)
     private String content;
 
-    @Column(nullable = false)
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = LocalDateTime.now().withNano(0);
+    }
 
     @Builder
     public ChatMessageEntity(ChatRoomEntity room, Long senderId, String content) {

@@ -149,6 +149,32 @@ public class UserAdminService {
         return ResponseEntity.ok(new ApiResponse<>(200, "해당 유저의 정지 처리가 완료되었습니다.", null));
     }
 
+    public ResponseEntity<ApiResponse<String>> unSuspendUser(String token, Long userId) {
+
+        Long adminId = jwtTokenValidator.getUserId(token);
+
+        UserEntity admin = userRepository.findById(adminId)
+                .orElseThrow(() -> new CustomException(ErrorException.USER_NOT_FOUND));
+
+        if (admin.getRole() != UserRole.ADMIN) {
+            throw new CustomException(ErrorException.NO_PERMISSION);
+        }
+
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorException.USER_NOT_FOUND));
+
+        if (user.getStatus() != UserStatus.SUSPENDED) {
+            throw new CustomException(ErrorException.INVALID_USER_STATUS);
+        }
+
+        user.updateStatus(UserStatus.ACTIVED, null);
+        user.updateMessage(null);
+
+        userRepository.save(user);
+
+        return ResponseEntity.ok(new ApiResponse<>(200, "해당 유저의 정지가 해제되었습니다.", null));
+    }
+
     public ResponseEntity<ApiResponse<String>> userRoleUpdate(String token, Long userId, UserRoleRequest request){
 
         Long adminId = jwtTokenValidator.getUserId(token);
@@ -187,7 +213,6 @@ public class UserAdminService {
         }
 
         long totalUsers = userQueryRepository.countAllUsers();
-        List<Long> allUserDataList = userQueryRepository.findAllUserData();
 
         LocalDate today = LocalDate.now();
 
@@ -207,7 +232,11 @@ public class UserAdminService {
 
         List<Integer> weekTimeSeries = redisDashboardService.getTimeSeries(weekStart, weekEnd);
 
-        int[] allUserData = allUserDataList.stream().mapToInt(Long::intValue).toArray();
+        List<Integer> allUserDataList =
+                redisDashboardService.getWeeklyUserCounts(weekStart, weekEnd);
+
+        int[] allUserData =
+                allUserDataList.stream().mapToInt(Integer::intValue).toArray();
         int[] weekUserData = weekTimeSeries.stream().mapToInt(Integer::intValue).toArray();
 
         long totalRestaurants = restaurantRepository.count();
@@ -218,6 +247,12 @@ public class UserAdminService {
 
         List<Integer> barDataList = redisDashboardService.getWeeklyReviewCounts(weekStart, weekEnd);
         int[] barData = barDataList.stream().mapToInt(Integer::intValue).toArray();
+
+        List<Integer> restaurantBarDataList =
+                redisDashboardService.getWeeklyRestaurantCounts(weekStart, weekEnd);
+
+        int[] allRestaurantData =
+                restaurantBarDataList.stream().mapToInt(Integer::intValue).toArray();
 
         List<PieItem> pieDataList = restaurantRepository.countRestaurantsByCategory();
 
@@ -246,6 +281,7 @@ public class UserAdminService {
                 (int) totalWeekReviews,
                 (int) totalMonthReviews,
                 allUserData,
+                allRestaurantData,
                 weekUserData,
                 barData,
                 pieData
@@ -585,4 +621,5 @@ public class UserAdminService {
                 return null;
         }
     }
+
 }
