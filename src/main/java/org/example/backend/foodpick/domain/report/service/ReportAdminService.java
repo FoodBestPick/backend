@@ -21,6 +21,7 @@ import org.example.backend.foodpick.global.exception.CustomException;
 import org.example.backend.foodpick.global.exception.ErrorException;
 import org.example.backend.foodpick.global.jwt.JwtTokenValidator;
 import org.example.backend.foodpick.global.util.ApiResponse;
+import org.example.backend.foodpick.infra.websocket.WebSocketSessionManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -40,6 +41,7 @@ public class ReportAdminService {
     private final UserRepository userRepository;
     private final JwtTokenValidator jwtTokenValidator;
     private final AlarmService alarmService;
+    private final WebSocketSessionManager webSocketSessionManager;
 
     public ResponseEntity<ApiResponse<ReportPageResponse>> getAllReports(
             String token,
@@ -155,6 +157,7 @@ public class ReportAdminService {
 
         if (banEndAt != null) {
             user.updateStatus(UserStatus.SUSPENDED, banEndAt);
+            webSocketSessionManager.forceLogout(user.getId());
         }
 
         userRepository.save(user);
@@ -216,6 +219,8 @@ public class ReportAdminService {
 
         report.update(admin);
         reportRepository.save(report);
+
+        webSocketSessionManager.forceLogout(user.getId());
 
         return ResponseEntity.ok(
                 new ApiResponse<>(200, "신고 승인 및 정지 처리가 완료되었습니다.", null)
