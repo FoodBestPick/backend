@@ -85,9 +85,14 @@ public class UserEntity {
         this.statusMessage = message;
     }
 
-    public void updateStatus(UserStatus status, LocalDateTime BanEndAt) {
+    public void updateStatus(UserStatus status, LocalDateTime banEndAt) {
         this.status = status;
-        this.banEndAt = BanEndAt.withNano(0);
+
+        if (banEndAt != null) {
+            this.banEndAt = banEndAt.withNano(0);
+        } else {
+            this.banEndAt = null;
+        }
     }
 
     public void updateMessage(String message) {
