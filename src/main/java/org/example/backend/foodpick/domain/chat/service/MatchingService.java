@@ -134,9 +134,8 @@ public class MatchingService {
                     message
             );
 
-            messagingTemplate.convertAndSendToUser(
-                    uid.toString(),
-                    "/queue/match-complete",
+            messagingTemplate.convertAndSend(
+                    "/topic/match/" + uid,
                     new MatchingResponse(true, room.getId())
             );
 
