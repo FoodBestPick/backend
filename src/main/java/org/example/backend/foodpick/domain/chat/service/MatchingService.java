@@ -19,6 +19,7 @@ import org.example.backend.foodpick.global.jwt.JwtTokenValidator;
 import org.example.backend.foodpick.global.util.ApiResponse;
 import org.example.backend.foodpick.infra.redis.service.RedisChatService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +38,7 @@ public class MatchingService {
 
     private final AlarmService alarmService;
     private final RedisChatService redisChatService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     private static final double MATCH_RADIUS_KM = 5.0;
 
@@ -130,6 +132,12 @@ public class MatchingService {
                     AlarmTargetType.CHAT_ROOM,
                     room.getId(),
                     message
+            );
+
+            messagingTemplate.convertAndSendToUser(
+                    uid.toString(),
+                    "/queue/match-complete",
+                    new MatchingResponse(true, room.getId())
             );
 
             alarmService.sendAlarm(uid, req);
