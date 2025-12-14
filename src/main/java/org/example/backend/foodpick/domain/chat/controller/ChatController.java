@@ -3,6 +3,7 @@ package org.example.backend.foodpick.domain.chat.controller;
 import lombok.RequiredArgsConstructor;
 import org.example.backend.foodpick.domain.chat.dto.ChatMessageRequest;
 import org.example.backend.foodpick.domain.chat.dto.ChatMessageResponse;
+import org.example.backend.foodpick.domain.chat.dto.ChatRoomResponse;
 import org.example.backend.foodpick.domain.chat.service.ChatService;
 import org.example.backend.foodpick.global.util.ApiResponse;
 import org.springframework.http.ResponseEntity;
@@ -29,5 +30,12 @@ public class ChatController {
             @PathVariable Long roomId) {
 
         return chatService.getMessage(token, roomId);
+    }
+
+    @GetMapping("/my-room")
+    public ResponseEntity<ApiResponse<ChatRoomResponse>> getMyRoom(
+            @RequestHeader("Authorization") String token
+    ) {
+        return chatService.getMyActiveRoom(token);
     }
 }

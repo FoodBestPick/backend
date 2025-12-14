@@ -3,14 +3,17 @@ package org.example.backend.foodpick.domain.chat.service;
 import lombok.RequiredArgsConstructor;
 import org.example.backend.foodpick.domain.chat.dto.ChatMessageRequest;
 import org.example.backend.foodpick.domain.chat.dto.ChatMessageResponse;
+import org.example.backend.foodpick.domain.chat.dto.ChatRoomResponse;
 import org.example.backend.foodpick.domain.chat.model.ChatMessageEntity;
 import org.example.backend.foodpick.domain.chat.model.ChatRoomEntity;
 import org.example.backend.foodpick.domain.chat.repository.ChatMessageRepository;
+import org.example.backend.foodpick.domain.chat.repository.ChatQueryRepository;
 import org.example.backend.foodpick.domain.chat.repository.ChatRoomRepository;
 import org.example.backend.foodpick.domain.user.model.UserEntity;
 import org.example.backend.foodpick.domain.user.repository.UserRepository;
 import org.example.backend.foodpick.global.exception.CustomException;
 import org.example.backend.foodpick.global.exception.ErrorException;
+import org.example.backend.foodpick.global.jwt.JwtTokenValidator;
 import org.example.backend.foodpick.global.util.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -28,6 +31,8 @@ public class ChatService {
     private final ChatMessageRepository messageRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final UserRepository userRepository;
+    private final ChatQueryRepository chatQueryRepository;
+    private final JwtTokenValidator jwtTokenValidator;
 
     public void handleMessage(ChatMessageRequest request) {
 
@@ -36,6 +41,10 @@ public class ChatService {
 
         UserEntity sender = userRepository.findById(request.getSenderId())
                 .orElseThrow(() -> new CustomException(ErrorException.USER_NOT_FOUND));
+
+        if (room.getExpiresAt().isBefore(LocalDateTime.now()) || Boolean.FALSE.equals(room.getIsActive())) {
+            throw new CustomException(ErrorException.CHAT_ROOM_EXPIRED);
+        }
 
         ChatMessageEntity msg = ChatMessageEntity.builder()
                 .room(room)
@@ -83,6 +92,20 @@ public class ChatService {
 
         return ResponseEntity.ok(
                 new ApiResponse<>(200, "메시지 가져오기 성공", messages)
+        );
+    }
+
+    public ResponseEntity<ApiResponse<ChatRoomResponse>> getMyActiveRoom(String token) {
+        Long userId = jwtTokenValidator.getUserId(token);
+
+        Long roomId = chatQueryRepository
+                .findMyActiveRoomId(userId, LocalDateTime.now())
+                .orElse(null);
+
+        ChatRoomResponse response = new ChatRoomResponse(roomId);
+
+        return ResponseEntity.ok(
+                new ApiResponse<>(200, "내 활성 채팅방 조회 성공", response)
         );
     }
 
