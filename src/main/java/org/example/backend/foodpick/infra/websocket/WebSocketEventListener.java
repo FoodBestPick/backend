@@ -38,7 +38,7 @@ public class WebSocketEventListener {
 
         try {
             Long userId = jwtTokenValidator.getUserId(token);
-            sessionManager.registerUser(userId);
+            sessionManager.registerSession(userId, accessor.getSessionId());
 
             log.info("WebSocket Connection Success: User {} connected with Session ID: {}", userId, accessor.getSessionId());
 
@@ -54,5 +54,11 @@ public class WebSocketEventListener {
 
     @EventListener
     public void handleWebSocketDisconnectListener(SessionDisconnectEvent event) {
+        StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
+        String sessionId = accessor.getSessionId();
+
+        sessionManager.removeSession(sessionId);
+
+        log.info("WebSocket Disconnected: Session ID: {}", sessionId);
     }
 }
