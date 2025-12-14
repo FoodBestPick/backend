@@ -98,12 +98,12 @@ public class UserAdminService {
         LocalDateTime banEndAt = calculateBanDuration(newWarning);
 
         if (banEndAt != null) {
+            if (banEndAt.equals(LocalDateTime.MAX)) {
+                throw new CustomException(ErrorException.PERMANENTLY_BANNED);
+            }
+
             user.updateStatus(UserStatus.SUSPENDED, banEndAt);
             webSocketSessionManager.forceLogout(user.getId());
-        }
-
-        if (banEndAt.getYear() > 9999) {
-            throw new CustomException(ErrorException.PERMANENTLY_BANNED);
         }
 
         userRepository.save(user);
