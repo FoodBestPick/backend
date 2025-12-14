@@ -156,6 +156,10 @@ public class ReportAdminService {
         LocalDateTime banEndAt = calculateBanDuration(newWarning);
 
         if (banEndAt != null) {
+            if (banEndAt.equals(LocalDateTime.MAX)) {
+                throw new CustomException(ErrorException.PERMANENTLY_BANNED);
+            }
+
             user.updateStatus(UserStatus.SUSPENDED, banEndAt);
             webSocketSessionManager.forceLogout(user.getId());
         }
