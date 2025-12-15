@@ -33,7 +33,6 @@ jobs:
           fi
           echo "Build Success"
 
-
       - name: Setup SSH Key
         run: |
           mkdir -p ~/.ssh
@@ -41,12 +40,16 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.HOST }} >> ~/.ssh/known_hosts
 
-
       - name: Upload jar to EC2
         run: |
           scp build/libs/*.jar \
             ${{ secrets.USERNAME }}@${{ secrets.HOST }}:/home/ubuntu/final/back/
 
+      - name: Write Firebase service account key on EC2
+        run: |
+          ssh ${{ secrets.USERNAME }}@${{ secrets.HOST }} "mkdir -p /home/ubuntu/final/back/config"
+          ssh ${{ secrets.USERNAME }}@${{ secrets.HOST }} "echo '${{ secrets.FIREBASE_SA_B64 }}' | base64 -d > /home/ubuntu/final/back/config/serviceAccountKey.json"
+          ssh ${{ secrets.USERNAME }}@${{ secrets.HOST }} "chmod 600 /home/ubuntu/final/back/config/serviceAccountKey.json"
 
       - name: Restart container
         run: |
