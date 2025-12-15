@@ -38,4 +38,12 @@ public class ChatController {
     ) {
         return chatService.getMyActiveRoom(token);
     }
+
+    @DeleteMapping("/{roomId}/leave")
+    public ResponseEntity<ApiResponse<String>> leaveRoom(
+            @RequestHeader("Authorization") String token,
+            @PathVariable Long roomId
+    ) {
+        return chatService.leaveRoom(token, roomId);
+    }
 }
