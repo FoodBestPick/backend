@@ -168,8 +168,12 @@ public class ChatService {
     }
 
     public String formatKoreanTime(LocalDateTime time) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("a h:mm");
-        return time.format(formatter).replace("AM", "오전").replace("PM", "오후");
+        var kst = java.time.ZoneId.of("Asia/Seoul");
+        var zdt = time.atZone(java.time.ZoneId.systemDefault()).withZoneSameInstant(kst);
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("a h:mm").withLocale(java.util.Locale.KOREAN);
+        String formatted = zdt.format(formatter);
+        return formatted.replace("오전", "오전").replace("오후", "오후"); // 이미 한글로 나올 수도 있음
     }
 
     private boolean isSystemContent(String content) {
