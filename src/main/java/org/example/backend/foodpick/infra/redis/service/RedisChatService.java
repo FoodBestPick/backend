@@ -7,7 +7,6 @@ import org.springframework.data.geo.Circle;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Metrics;
 import org.springframework.data.geo.Point;
-import org.springframework.data.redis.core.GeoOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -23,25 +22,16 @@ public class RedisChatService {
     private static final String GEO_KEY = "match:geo";
     private static final String USER_QUEUE_KEY = "match:user:queue";
 
-    /* ============================
-         Queue Key 생성
-    ============================ */
     public String buildQueueKey(String category, int count) {
         return "match:queue:" + category + ":" + count;
     }
 
-    /* ============================
-         매칭 중 여부 확인
-    ============================ */
     public boolean isMatching(Long userId) {
         return Boolean.TRUE.equals(
                 redisTemplate.hasKey(USER_QUEUE_KEY + ":" + userId)
         );
     }
 
-    /* ============================
-         유저 → 큐 매핑 저장
-    ============================ */
     public void saveUserQueue(Long userId, String queueKey) {
         redisTemplate.opsForValue()
                 .set(USER_QUEUE_KEY + ":" + userId, queueKey);
@@ -56,26 +46,24 @@ public class RedisChatService {
         redisTemplate.delete(USER_QUEUE_KEY + ":" + userId);
     }
 
-    /* ============================
-         큐 등록 (중복 방지)
-    ============================ */
     public void enqueueUser(String queueKey, Long userId) {
 
-        if (isMatching(userId)) {
+        String userKey = USER_QUEUE_KEY + ":" + userId;
+        Boolean ok = redisTemplate.opsForValue().setIfAbsent(userKey, queueKey);
+        if (!Boolean.TRUE.equals(ok)) {
             throw new CustomException(ErrorException.ALREADY_MATCHING);
         }
 
+        redisTemplate.opsForList().remove(queueKey, 0, userId.toString());
+
         redisTemplate.opsForList().rightPush(queueKey, userId.toString());
-        saveUserQueue(userId, queueKey);
+
     }
 
     public void removeUserFromQueue(String queueKey, Long userId) {
         redisTemplate.opsForList().remove(queueKey, 0, userId.toString());
     }
 
-    /* ============================
-         GEO 저장 / 삭제
-    ============================ */
     public void saveLocation(Long userId, double lat, double lng) {
         redisTemplate.opsForGeo()
                 .add(GEO_KEY, new Point(lng, lat), userId.toString());
@@ -86,9 +74,6 @@ public class RedisChatService {
                 .remove(GEO_KEY, userId.toString());
     }
 
-    /* ============================
-         반경 검색
-    ============================ */
     public Set<Long> findUsersInRadius(double lat, double lng, double radiusKm) {
 
         var results = redisTemplate.opsForGeo().radius(
@@ -104,9 +89,6 @@ public class RedisChatService {
                 .collect(Collectors.toSet());
     }
 
-    /* ============================
-         실제 매칭 로직
-    ============================ */
     public List<Long> matchFromQueue(
             String queueKey,
             Set<Long> nearUsers,
@@ -142,20 +124,11 @@ public class RedisChatService {
         return matched;
     }
 
-    /* ============================
-         매칭 취소
-    ============================ */
     public void cancelMatching(Long userId) {
-        String queueKey = getUserQueue(userId);
-
-        if (queueKey != null) {
-            removeUserFromQueue(queueKey, userId);
-        } else {
-            Set<String> keys = redisTemplate.keys("match:queue:*");
-            if (keys != null) {
-                for (String k : keys) {
-                    redisTemplate.opsForList().remove(k, 0, userId.toString());
-                }
+        Set<String> keys = redisTemplate.keys("match:queue:*");
+        if (keys != null) {
+            for (String k : keys) {
+                redisTemplate.opsForList().remove(k, 0, userId.toString());
             }
         }
 
