@@ -65,7 +65,8 @@ public class ChatService {
                 sender.getNickname(),
                 sender.getImageUrl(),
                 msg.getContent(),
-                formattedTime
+                formattedTime,
+                false
         );
 
         messagingTemplate.convertAndSend("/topic/chat/" + room.getId(), response);
@@ -96,7 +97,8 @@ public class ChatService {
                     sender.getNickname(),
                     sender.getImageUrl(),
                     msg.getContent(),
-                    formatKoreanTime(msg.getCreatedAt())
+                    formatKoreanTime(msg.getCreatedAt()),
+                    isSystemContent(msg.getContent())
             );
         }).toList();
 
@@ -142,7 +144,8 @@ public class ChatService {
                 leaver.getNickname(),
                 leaver.getImageUrl(),
                 msg.getContent(),
-                formatKoreanTime(msg.getCreatedAt())
+                formatKoreanTime(msg.getCreatedAt()),
+                true
         );
 
         messagingTemplate.convertAndSend("/topic/chat/" + room.getId(), response);
@@ -167,5 +170,11 @@ public class ChatService {
     public String formatKoreanTime(LocalDateTime time) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("a h:mm");
         return time.format(formatter).replace("AM", "오전").replace("PM", "오후");
+    }
+
+    private boolean isSystemContent(String content) {
+        if (content == null) return false;
+        return content.contains("님이 입장했습니다")
+                || content.contains("님이 채팅방을 나갔습니다");
     }
 }
