@@ -14,19 +14,38 @@ public class FirebaseConfig {
 
     @PostConstruct
     public void initialize() {
-        if (FirebaseApp.getApps().isEmpty()) {
-            try {
-                FileInputStream serviceAccount =
-                        new FileInputStream("src/main/resources/serviceAccountKey.json");
+        if (!FirebaseApp.getApps().isEmpty()) return;
 
-                FirebaseOptions options = new FirebaseOptions.Builder()
-                        .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                        .build();
+        String envPath = System.getenv("GOOGLE_APPLICATION_CREDENTIALS");
 
-                FirebaseApp.initializeApp(options);
-            } catch (IOException e) {
-                e.printStackTrace();
+        String[] candidates = new String[]{
+                envPath,
+                "/config/serviceAccountKey.json",
+                "src/main/resources/serviceAccountKey.json"
+        };
+
+        String selected = null;
+        for (String p : candidates) {
+            if (p == null || p.isBlank()) continue;
+            if (java.nio.file.Files.exists(java.nio.file.Path.of(p))) {
+                selected = p;
+                break;
             }
+        }
+
+        if (selected == null) {
+            System.err.println("Firebase init failed: credential file not found.");
+            return;
+        }
+
+        try (java.io.InputStream serviceAccount = new java.io.FileInputStream(selected)) {
+            FirebaseOptions options = new FirebaseOptions.Builder()
+                    .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                    .build();
+            FirebaseApp.initializeApp(options);
+            System.out.println("Firebase initialized. credentialPath=" + selected);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }
