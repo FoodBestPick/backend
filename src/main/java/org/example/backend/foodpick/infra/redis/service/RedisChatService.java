@@ -70,7 +70,7 @@ public class RedisChatService {
     }
 
     public void removeUserFromQueue(String queueKey, Long userId) {
-        redisTemplate.opsForList().remove(queueKey, 1, userId.toString());
+        redisTemplate.opsForList().remove(queueKey, 0, userId.toString());
     }
 
     /* ============================
@@ -146,14 +146,19 @@ public class RedisChatService {
          매칭 취소
     ============================ */
     public void cancelMatching(Long userId) {
-
         String queueKey = getUserQueue(userId);
 
-        if (queueKey == null) {
-            throw new CustomException(ErrorException.NOT_MATCHING);
+        if (queueKey != null) {
+            removeUserFromQueue(queueKey, userId);
+        } else {
+            Set<String> keys = redisTemplate.keys("match:queue:*");
+            if (keys != null) {
+                for (String k : keys) {
+                    redisTemplate.opsForList().remove(k, 0, userId.toString());
+                }
+            }
         }
 
-        removeUserFromQueue(queueKey, userId);
         deleteLocation(userId);
         deleteUserQueue(userId);
     }
