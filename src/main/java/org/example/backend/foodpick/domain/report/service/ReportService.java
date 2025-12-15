@@ -6,6 +6,7 @@ import org.example.backend.foodpick.domain.alarm.model.AlarmTargetType;
 import org.example.backend.foodpick.domain.alarm.model.AlarmType;
 import org.example.backend.foodpick.domain.alarm.service.AlarmService;
 import org.example.backend.foodpick.domain.chat.repository.ChatMessageRepository;
+import org.example.backend.foodpick.domain.report.dto.MyReportResponse;
 import org.example.backend.foodpick.domain.report.dto.SendReportRequest;
 import org.example.backend.foodpick.domain.report.model.ReportEntity;
 import org.example.backend.foodpick.domain.report.repository.ReportRepository;
@@ -20,6 +21,7 @@ import org.example.backend.foodpick.global.jwt.JwtTokenValidator;
 import org.example.backend.foodpick.global.util.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -88,5 +90,54 @@ public class ReportService {
         }
 
         return ResponseEntity.ok(new ApiResponse<>(200, "신고가 접수되었습니다.", null));
+    }
+
+    @Transactional(readOnly = true)
+    public ResponseEntity<ApiResponse<List<MyReportResponse>>> getMyReport(String token){
+
+        Long userId = jwtTokenValidator.getUserId(token);
+
+        userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorException.USER_NOT_FOUND));
+
+        List<ReportEntity> reports =
+                reportRepository.findByReporterIdOrderByCreatedAtDesc(userId);
+
+        List<MyReportResponse> response = reports.stream()
+                .map(MyReportResponse::from)
+                .toList();
+
+        return ResponseEntity.ok(new ApiResponse<>(200, "신고 내역을 가져왔습니다.", response));
+    }
+
+    @Transactional
+    public ResponseEntity<ApiResponse<String>> deleteMyReport(String token, Long reportId) {
+
+        Long userId = jwtTokenValidator.getUserId(token);
+
+        ReportEntity report = reportRepository.findById(reportId)
+                .orElseThrow(() -> new CustomException(ErrorException.REPORT_NOT_FOUND));
+
+        if (!report.getReporter().getId().equals(userId)) {
+            throw new CustomException(ErrorException.INVALID_REPORT);
+        }
+
+        reportRepository.delete(report);
+
+        return ResponseEntity.ok(new ApiResponse<>(200, "신고 내역이 삭제되었습니다.", null));
+    }
+
+    @Transactional
+    public ResponseEntity<ApiResponse<String>> deleteAllMyReports(String token) {
+
+        Long userId = jwtTokenValidator.getUserId(token);
+
+        long count = reportRepository.countByReporterId(userId);
+        if (count == 0) {
+            return ResponseEntity.ok(new ApiResponse<>(200, "삭제할 신고 내역이 없습니다.", null));
+        }
+
+        reportRepository.deleteAllByReporterId(userId);
+        return ResponseEntity.ok(new ApiResponse<>(200, "내 신고 내역이 모두 삭제되었습니다.", null));
     }
 }
