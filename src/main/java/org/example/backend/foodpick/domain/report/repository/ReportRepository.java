@@ -8,6 +8,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface ReportRepository extends JpaRepository<ReportEntity, Long> {
 
@@ -20,4 +22,8 @@ public interface ReportRepository extends JpaRepository<ReportEntity, Long> {
             ReportTargetType targetType,
             Pageable pageable
     );
+
+    List<ReportEntity> findByReporterIdOrderByCreatedAtDesc(Long reporterId);
+    long countByReporterId(Long reporterId);
+    void deleteAllByReporterId(Long reporterId);
 }
