@@ -11,7 +11,6 @@ import org.example.backend.foodpick.domain.chat.model.ChatParticipantEntity;
 import org.example.backend.foodpick.domain.chat.model.ChatRoomEntity;
 import org.example.backend.foodpick.domain.chat.repository.ChatParticipantRepository;
 import org.example.backend.foodpick.domain.chat.repository.ChatRoomRepository;
-import org.example.backend.foodpick.domain.user.model.UserEntity;
 import org.example.backend.foodpick.domain.user.repository.UserRepository;
 import org.example.backend.foodpick.global.exception.CustomException;
 import org.example.backend.foodpick.global.exception.ErrorException;
@@ -54,9 +53,10 @@ public class MatchingService {
             throw new CustomException(ErrorException.ALREADY_MATCHING);
         }
 
+        redisChatService.cancelMatching(userId);
+
         userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorException.USER_NOT_FOUND));
-
 
         double lat = request.getLatitude();
         double lng = request.getLongitude();
@@ -72,7 +72,6 @@ public class MatchingService {
 
         redisChatService.enqueueUser(queueKey, userId);
 
-        redisChatService.saveUserQueue(userId, queueKey);
 
         Set<Long> nearUsers =
                 redisChatService.findUsersInRadius(lat, lng, MATCH_RADIUS_KM);
@@ -83,6 +82,8 @@ public class MatchingService {
         if (matched == null) {
             return ResponseEntity.ok(new ApiResponse<>(200, "매칭 대기 중입니다.", new MatchingResponse(false, null)));
         }
+
+        matched.forEach(redisChatService::cancelMatching);
 
         // 채팅방 생성
         ChatRoomEntity room = ChatRoomEntity.builder()
