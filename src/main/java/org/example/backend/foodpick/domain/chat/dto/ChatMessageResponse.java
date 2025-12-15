@@ -16,5 +16,6 @@ public class ChatMessageResponse {
     private String senderAvatar;
     private String content;
     private String formattedTime;
+    private boolean isSystem;
 }
 
