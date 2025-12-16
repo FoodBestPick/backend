@@ -2,6 +2,8 @@ package org.example.backend.foodpick.domain.alarm.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.example.backend.foodpick.domain.alarm.dto.AlarmResponse;
+import org.example.backend.foodpick.domain.alarm.dto.AlarmSettingResponse;
+import org.example.backend.foodpick.domain.alarm.dto.AlarmSettingUpdateRequest;
 import org.example.backend.foodpick.domain.alarm.dto.SendAlarmRequest;
 import org.example.backend.foodpick.domain.alarm.service.AlarmService;
 import org.example.backend.foodpick.global.util.ApiResponse;
@@ -52,5 +54,20 @@ public class AlarmController {
             @RequestHeader("Authorization") String token
     ) {
         return alarmService.deleteAllMyAlarms(token);
+    }
+
+    @GetMapping("/settings")
+    public ResponseEntity<ApiResponse<AlarmSettingResponse>> getMySettings(
+            @RequestHeader("Authorization") String token
+    ) {
+        return alarmService.getMySettings(token);
+    }
+
+    @PatchMapping("/settings")
+    public ResponseEntity<ApiResponse<String>> updateMySetting(
+            @RequestHeader("Authorization") String token,
+            @RequestBody AlarmSettingUpdateRequest req
+    ) {
+        return alarmService.updateMySetting(token, req);
     }
 }
