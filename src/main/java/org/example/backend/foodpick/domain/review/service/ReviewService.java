@@ -1,6 +1,7 @@
 package org.example.backend.foodpick.domain.review.service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.backend.foodpick.domain.alarm.service.AlarmService;
 import org.example.backend.foodpick.domain.like.repository.LikeRepository;
 import org.example.backend.foodpick.domain.restaurant.model.Restaurant;
 import org.example.backend.foodpick.domain.restaurant.repository.RestaurantRepository;
