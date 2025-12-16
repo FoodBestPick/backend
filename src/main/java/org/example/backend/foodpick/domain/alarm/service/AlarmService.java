@@ -2,9 +2,15 @@ package org.example.backend.foodpick.domain.alarm.service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.backend.foodpick.domain.alarm.dto.AlarmResponse;
+import org.example.backend.foodpick.domain.alarm.dto.AlarmSettingResponse;
+import org.example.backend.foodpick.domain.alarm.dto.AlarmSettingUpdateRequest;
 import org.example.backend.foodpick.domain.alarm.dto.SendAlarmRequest;
 import org.example.backend.foodpick.domain.alarm.model.AlarmEntity;
+import org.example.backend.foodpick.domain.alarm.model.AlarmSettingEntity;
+import org.example.backend.foodpick.domain.alarm.model.AlarmSettingId;
+import org.example.backend.foodpick.domain.alarm.model.AlarmType;
 import org.example.backend.foodpick.domain.alarm.repository.AlarmRepository;
+import org.example.backend.foodpick.domain.alarm.repository.AlarmSettingRepository;
 import org.example.backend.foodpick.domain.user.model.UserEntity;
 import org.example.backend.foodpick.domain.user.repository.UserRepository;
 import org.example.backend.foodpick.global.exception.CustomException;
@@ -18,6 +24,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +36,7 @@ public class AlarmService {
     private final SimpMessagingTemplate messagingTemplate;
     private final FcmService fcmService;
     private final JwtTokenValidator jwtTokenValidator;
+    private final AlarmSettingRepository alarmSettingRepository;
 
     public void sendAlarm(Long senderId, SendAlarmRequest request){
 
@@ -55,7 +64,9 @@ public class AlarmService {
                 dto
         );
 
-        if (receiver.getFcmToken() != null) {
+        boolean enabled = isEnabled(receiver.getId(), request.getAlarmType());
+
+        if (receiver.getFcmToken() != null && enabled) {
             String title = "FoodPick 알림";
             String body = request.getMessage();
             fcmService.sendNotification(receiver.getFcmToken(), title, body, alarm);
@@ -149,5 +160,47 @@ public class AlarmService {
         return ResponseEntity.ok(
                 new ApiResponse<>(200, "모든 알림이 삭제되었습니다.", null)
         );
+    }
+
+    @Transactional(readOnly = true)
+    public ResponseEntity<ApiResponse<AlarmSettingResponse>> getMySettings(String token) {
+        Long userId = jwtTokenValidator.getUserId(token);
+
+        Map<AlarmType, Boolean> map = alarmSettingRepository.findAllByIdUserId(userId).stream()
+                .collect(Collectors.toMap(e -> e.getId().getAlarmType(), AlarmSettingEntity::isEnabled));
+
+        for (AlarmType type : AlarmType.values()) {
+            map.putIfAbsent(type, true);
+        }
+
+        return ResponseEntity.ok(new ApiResponse<>(200, "알림 설정 조회 성공", new AlarmSettingResponse(map)));
+    }
+
+    @Transactional
+    public ResponseEntity<ApiResponse<String>> updateMySetting(String token, AlarmSettingUpdateRequest req) {
+        Long userId = jwtTokenValidator.getUserId(token);
+
+        AlarmSettingId id = AlarmSettingId.builder()
+                .userId(userId)
+                .alarmType(req.getAlarmType())
+                .build();
+
+        AlarmSettingEntity entity = alarmSettingRepository.findById(id)
+                .orElseGet(() -> AlarmSettingEntity.builder()
+                        .id(id)
+                        .enabled(true)
+                        .build());
+
+        entity.updateEnabled(req.isEnabled());
+        alarmSettingRepository.save(entity);
+
+        return ResponseEntity.ok(new ApiResponse<>(200, "알림 설정 변경 성공", null));
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isEnabled(Long userId, AlarmType type) {
+        return alarmSettingRepository.findByIdUserIdAndIdAlarmType(userId, type)
+                .map(AlarmSettingEntity::isEnabled)
+                .orElse(true);
     }
 }
