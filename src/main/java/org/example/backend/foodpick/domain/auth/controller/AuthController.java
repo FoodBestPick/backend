@@ -51,8 +51,9 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<ApiResponse<TokenResponse>> refreshToken(HttpServletRequest request){
-        return authService.refreshToken(request);
+    public ResponseEntity<ApiResponse<TokenResponse>> refreshToken(HttpServletRequest request,
+                                                                   HttpServletResponse response){
+        return authService.refreshToken(request, response);
     }
 
     @PostMapping("/check-nickname")
