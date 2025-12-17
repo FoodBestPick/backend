@@ -21,7 +21,7 @@ public enum ErrorException {
     INVALID_EVALUATION_SCORES(400, "점수는 6개 항목으로 구성되어야 합니다."),
     INVALID_EVALUATION_TARGET(400, "평가 대상은 프로젝트에 참여 중인 유저여야 합니다."),
     ALREADY_ANSWERED(400, "이미 답변이 등록된 문의입니다." ),
-    INVALID_DATE_RANGE(400, "조회 기간(startDate, endDate)은 필수입니다."),
+    INVALID_INQUIRY_STATUS(400, "유효하지 않은 문의 상태 값입니다."),
     ALREADY_IMPOSED(400, "이미 제재된 신고입니다."),
     INVALID_REPORT(400, "본인이 신고한 내역이 아닙니다."),
     CHAT_ROOM_NOT_FOUND(400, "채팅방을 찾을 수 없습니다."),
@@ -36,6 +36,7 @@ public enum ErrorException {
     NOT_MATCHING(400, "현재 매칭 중이 아닙니다."),
     INVALID_USER_STATUS(400, "정지 상태가 아닙니다."),
     CHAT_ROOM_EXPIRED(400, "채팅방 시간이 만료되었습니다."),
+    INQUIRY_INVALID_INPUT(400, "문의 내용을 입력해주세요."),
 
     UNAUTHORIZED(401, "인증 권한이 없습니다."),
     TOKEN_EXPIRED(401, "토큰이 만료되었습니다."),
