@@ -129,6 +129,10 @@ public class UserEntity {
         this.fcmToken = fcmToken;
     }
 
+    public void updateRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
+    }
+
     public static UserEntity ofSignUp(String email, String password, String nickname) {
         return UserEntity.builder()
                 .email(email)

@@ -118,6 +118,8 @@ public class AuthService {
         String accessToken = jwtTokenProvider.generateToken(user.getId());
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
 
+        user.updateRefreshToken(refreshToken);
+
         user.updatedAt(LocalDateTime.now().withNano(0));
         authRepository.save(user);
 
@@ -229,7 +231,8 @@ public class AuthService {
     }
 
     public ResponseEntity<ApiResponse<TokenResponse>> refreshToken(
-            HttpServletRequest request
+            HttpServletRequest request,
+            HttpServletResponse response
     ) {
 
         String refreshToken = null;
@@ -258,10 +261,24 @@ public class AuthService {
         }
 
         String newAccessToken = jwtTokenProvider.generateToken(user.getId());
+        String newRefreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
 
-        TokenResponse response = new TokenResponse(newAccessToken);
+        user.updateRefreshToken(newRefreshToken);
+        user.updatedAt(LocalDateTime.now().withNano(0));
+        authRepository.save(user);
 
-        return ResponseEntity.ok(new ApiResponse<>(200, "액세스 토큰 재발급 완료", response));
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", newRefreshToken)
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(60 * 60 * 24 * 14)
+                .sameSite("Strict")
+                .build();
+
+        response.addHeader("Set-Cookie", cookie.toString());
+
+        TokenResponse body = new TokenResponse(newAccessToken);
+        return ResponseEntity.ok(new ApiResponse<>(200, "액세스 토큰 재발급 완료", body));
     }
 
     public ResponseEntity<ApiResponse<String>> checkNickname(CheckNicknameRequest request) {
