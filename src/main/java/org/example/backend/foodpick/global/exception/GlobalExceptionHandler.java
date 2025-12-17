@@ -3,6 +3,7 @@ package org.example.backend.foodpick.global.exception;
 
 import lombok.extern.slf4j.Slf4j;
 
+import org.example.backend.foodpick.domain.inquiry.model.InquiryStatus;
 import org.example.backend.foodpick.global.util.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +11,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @Slf4j
 @RestControllerAdvice
@@ -80,4 +82,24 @@ public class GlobalExceptionHandler {
                 ));
     }
 
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiResponse<Object>> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
+
+        Class<?> requiredType = e.getRequiredType();
+
+        if ("status".equals(e.getName())
+                && requiredType != null
+                && InquiryStatus.class.isAssignableFrom(requiredType)) {
+
+            ErrorException err = ErrorException.INVALID_INQUIRY_STATUS;
+
+            return ResponseEntity
+                    .status(err.getCode())
+                    .body(ApiResponse.failure(err.getMessage(), err.getCode()));
+        }
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.failure("잘못된 요청 파라미터입니다.", HttpStatus.BAD_REQUEST.value()));
+    }
 }
